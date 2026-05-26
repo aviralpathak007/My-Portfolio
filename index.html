@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviral Pathak | CTO & Tech Lead</title>
+    <meta name="description" content="Portfolio of Aviral Pathak, Co-Founder & CTO @Sunitiq-AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Check for saved theme preference to prevent FOUC
+        const savedTheme = localStorage.getItem('portfolio-theme');
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light-theme');
+        }
+    </script>
+</head>
+
+<body class="loading">
+    <!-- 1. Preloader -->
+    <div id="preloader" class="preloader">
+        <div class="loader-content">
+            <span class="logo loader-logo">AP<span class="blink">_</span></span>
+            <div class="boot-text" id="boot-text" style="display: none;">SYSTEM INITIALIZING...</div>
+            <button id="enter-btn" class="magnetic enter-btn" style="display: none; margin-top: 20px;">ENTER
+                SYSTEM</button>
+            <div class="progress-bar" id="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <p class="loader-text" id="loader-text">INITIALIZING PORTFOLIO...</p>
+        </div>
+    </div>
+
+    <!-- 2. Full-Screen Glass Menu & Hamburger -->
+    <div class="menu-toggle magnetic" id="menu-toggle">
+        <span></span><span></span><span></span>
+    </div>
+    <nav id="glass-menu" class="glass-menu hide">
+        <ul class="menu-links">
+            <li><a href="#hero" class="magnetic menu-link">Home</a></li>
+            <li><a href="#roles" class="magnetic menu-link">Roles</a></li>
+            <li><a href="#experience" class="magnetic menu-link">Experience</a></li>
+            <li><a href="#projects" class="magnetic menu-link">Work</a></li>
+            <li><a href="#skills" class="magnetic menu-link">Skills</a></li>
+            <li><a href="#contact" class="magnetic menu-link">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- 3. Audio Toggle Button -->
+    <button id="audio-toggle" class="audio-toggle magnetic" aria-label="Toggle Sound">
+        <!-- Sound On Icon -->
+        <svg id="sound-icon-on" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"
+            fill="none" style="display: none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <!-- Sound Off Icon -->
+        <svg id="sound-icon-off" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"
+            fill="none">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- 4. Easter Egg Console -->
+    <div id="easter-egg" class="easter-egg hide">
+        <div class="ee-header">Root Access Granted</div>
+        <div class="ee-body" id="ee-body">
+            <span>> </span><input type="text" id="ee-input" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+
+    <!-- 5. Easter Egg Features -->
+    <div id="hearts-container" class="hearts-container"></div>
+    <div id="tech-modal" class="tech-modal hide">
+        <div class="tech-modal-content glass-card">
+            <button id="close-tech-modal" class="tech-close-btn">&times;</button>
+            <h3 class="tech-title">System Initialised Successfully</h3>
+            <canvas id="neural-canvas"></canvas>
+        </div>
+    </div>
+    <div class="cursor-dot" data-cursor-dot></div>
+    <div class="cursor-outline" data-cursor-outline></div>
+
+    <!-- INTERACTIVE BACKGROUND -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="bg-grid"></div>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="audio-toggle magnetic theme-btn" aria-label="Toggle Theme"
+        style="right: 40px; left: auto; top: auto; bottom: 40px;">
+        <i data-lucide="sun" class="sun-icon"></i>
+        <i data-lucide="moon" class="moon-icon"></i>
+    </button>
+    <nav class="navbar glass" style="justify-content: flex-start; pointer-events: none;">
+        <a href="#hero" class="logo" style="pointer-events: auto;">AP.</a>
+    </nav>
+    <!-- SCROLL-DRIVEN CIRCUIT SVG -->
+    <svg id="scroll-circuit" viewBox="0 0 100 2000" preserveAspectRatio="none">
+        <path id="circuit-path"
+            d="M 20 0 L 20 200 L 50 250 L 50 600 L 20 650 L 20 1200 L 80 1300 L 80 1700 L 20 1800 L 20 2000" />
+    </svg>
+
+    <main class="content-wrapper">
+        <!-- HERO SECTION -->
+        <section id="hero" class="split-hero">
+            <div class="hero-left">
+                <div class="hero-image-wrapper glass-card">
+                    <!-- The user will save their photo as assets/profile-pic.jpeg -->
+                    <img src="assets/profile-pic.jpeg" alt="Aviral Pathak" class="hero-image"
+                        onerror="this.src='assets/avatar.png'">
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <a href="#contact" class="hero-badge">
+                    <span class="dot"></span> Available for new opportunities
+                </a>
+
+                <h1 class="hero-huge-title">
+                    <span class="greeting-script">Hey, there</span><br>
+                    <span class="name-bold glitch" data-text="I AM AVIRAL PATHAK">I AM AVIRAL PATHAK</span>
+                </h1>
+
+                <p class="hero-description">
+                    Specialized in Machine Learning, System Architecture, Cross-platform Apps, and Front End
+                    Development.
+                </p>
+
+                <div class="hero-role">
+                    <span class="role-line">CO-FOUNDER</span>
+                    <span class="role-line">&amp; CTO, <a href="https://www.sunitiq.com" target="_blank"
+                            class="company-link">SUNITIQ-AI</a></span>
+                </div>
+
+                <div class="hero-actions" style="margin-top: 2rem;">
+                    <a href="#projects" class="btn-primary">View My Work</a>
+                    <a href="assets/resume.pdf" download="Aviral_Pathak_Resume.pdf" class="btn-primary"
+                        style="gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Resume
+                    </a>
+                </div>
+            </div>
+            <div class="scroll-indicator-container">
+                <a href="#about" class="scroll-indicator">
+                    <div class="mouse"></div>
+                    <div class="arrow"></div>
+                </a>
+            </div>
+        </section>
+
+        <!-- ABOUT ME SECTION -->
+        <section id="about" class="about">
+            <h2 class="section-title dynamic-heading" id="about-heading">ABOUT ME</h2>
+            <div class="curtain-reveal-container">
+                <div class="curtain-panel left"></div>
+                <div class="curtain-panel right"></div>
+                <div class="glass-card about-text reveal-content">
+                    <p>👋 Hello, World! I'm Aviral Pathak.</p>
+                    <blockquote
+                        style="margin: 1rem 0; padding-left: 1rem; border-left: 4px solid var(--accent-primary); font-style: italic; color: var(--text-secondary);">
+                        System Status: Logic in the head, poetry in the heart.
+                    </blockquote>
+                    <p>I'm a second-year undergraduate pursuing my B.Tech in Mathematics and Computing at the Madhav
+                        Institute of Technology and Science (MITS) in Gwalior. But if you really want to know me, you
+                        have to look at the two worlds I constantly bridge: the analytical and the artistic.</p>
+
+                    <h3 style="margin-top: 1.5rem; color: var(--accent-primary);">💻 Player 1: The Coder & CTO</h3>
+                    <p>By day, I am the Co-Founder and CTO of Sunitiq-Al. I thrive on solving complex, real-world
+                        problems through technology. You can have a look at my recent side quests in the <a
+                            href="#projects"
+                            style="color: var(--accent-primary); text-decoration: underline; font-weight: bold;">Projects
+                            section downscroll</a>. Whether I am managing complex UI states with Provider and Riverpod
+                        or architecting scalable backend solutions, I believe in writing clean code that makes a
+                        tangible impact.</p>
+
+                    <h3 style="margin-top: 1.5rem; color: var(--accent-primary);">🎭 Player 2: The Storyteller & Artist
+                    </h3>
+                    <p>When I'm not debugging or compiling code, my brain switches gears. I believe the best software
+                        developers are also great storytellers.</p>
+                    <ul style="list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+                        <li><strong>Poetry & Songwriting:</strong> I love translating complex emotions and abstract
+                            thoughts into rhythm and rhyme.</li>
+                        <li><strong>Storytelling:</strong> Whether I am drafting a new piece of fiction or structuring a
+                            narrative, I am always chasing a captivating story.</li>
+                        <li><strong>Cinema:</strong> I am a huge movie buff, constantly analyzing plots, character arcs,
+                            and the magic of a great script.</li>
+                    </ul>
+
+                    <h3 style="margin-top: 1.5rem; color: var(--accent-primary);">Let’s Build (or Write) Something
+                        Together!</h3>
+                    <p>Want to discuss the architecture of your next cross-platform app, debate the plot twist of a
+                        classic movie, or jam on some songwriting ideas? Drop me a message—I'm always up for a great
+                        conversation!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROLES SECTION (Horizontal Scroll) -->
+        <!-- NEURAL CORE BRAIN SECTION (SCROLL SCRUBBED 3D) -->
+        <section id="neural-core-section" class="neural-core-section">
+            <div id="brain-canvas-container">
+                <canvas id="circuit-brain"></canvas>
+            </div>
+        </section>
+
+        <section id="roles" class="experience-wrapper">
+            <div class="experience-sticky">
+                <h2 class="section-title split-text"
+                    style="position: absolute; top: 40px; left: 10%; text-transform: uppercase;">Roles I Am
+                    <span class="highlight">Comfortable With</span>
+                </h2>
+                <div class="experience-track">
+                    <!-- Cards -->
+                    <div class="glass-card exp-card role-card" data-title="Machine Learning Engineer"
+                        data-subtitle="AI & Data Models" data-image="./assets/ml-engineer.png">
+                        <h3>Machine Learning Engineer</h3>
+                        <p class="accent">AI & Data Models</p>
+                        <p class="role-desc">Specialized in training, deploying, and optimizing predictive models, LLMs,
+                            and neural
+                            networks using PyTorch, TensorFlow, and advanced deep learning techniques.</p>
+                        <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                    </div>
+                    <div class="glass-card exp-card role-card" data-title="Data Science Engineer"
+                        data-subtitle="Big Data & Analytics" data-image="./assets/data-science.png">
+                        <h3>Data Science Engineer</h3>
+                        <p class="accent">Big Data & Analytics</p>
+                        <p class="role-desc">Expert in analyzing large datasets, feature engineering, and building
+                            robust data pipelines
+                            to extract actionable insights for enterprise AI solutions.</p>
+                        <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                    </div>
+                    <div class="glass-card exp-card role-card" data-title="Flutter App Developer"
+                        data-subtitle="Cross-Platform Mobile" data-image="./assets/flutter-app.png">
+                        <h3>Flutter App Developer</h3>
+                        <p class="accent">Cross-Platform Mobile</p>
+                        <p class="role-desc">Crafting high-performance, beautiful, and native-feeling mobile
+                            applications for iOS and
+                            Android simultaneously using the Dart language and Flutter framework.</p>
+                        <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                    </div>
+                    <div class="glass-card exp-card role-card" data-title="Frontend Dev Engineer"
+                        data-subtitle="Modern Web UI/UX" data-image="./assets/frontend-dev.png">
+                        <h3>Frontend Dev Engineer</h3>
+                        <p class="accent">Modern Web UI/UX</p>
+                        <p class="role-desc">Designing interactive, fluid, and highly optimized web interfaces using
+                            modern frameworks,
+                            advanced CSS animations, and cutting-edge frontend architecture.</p>
+                        <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                    </div>
+                </div>
+                <!-- Roles Horizontal Progress Bar -->
+                <div class="roles-progress-container">
+                    <div class="roles-progress-bar" id="roles-progress"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SKILLS SECTION -->
+        <section id="skills" class="skills">
+            <h2 class="section-title split-text">Technical <span class="highlight">Skills</span></h2>
+
+            <div class="skills-key">
+                <span class="key-item"><span class="key-dot lang-dot"></span> Languages</span>
+                <span class="key-item"><span class="key-dot ml-dot"></span> ML & Data Science</span>
+                <span class="key-item"><span class="key-dot web-dot"></span> Frameworks & Web</span>
+            </div>
+
+            <div id="terminal-sandbox" class="terminal-window glass-card">
+                <div class="terminal-header">
+                    <span class="term-btn close"></span>
+                    <span class="term-btn minimize"></span>
+                    <span class="term-btn expand"></span>
+                    <span class="term-title">aviral@sunitiq-ai: ~/skills</span>
+                </div>
+                <div id="terminal-body" class="terminal-body">
+                    <!-- Animation content injected by JS -->
+                </div>
+            </div>
+
+            <!-- Hidden Data Source for JS Decryption -->
+            <div id="skills-data" style="display: none;">
+                <span class="lang-tag">C++</span>
+                <span class="lang-tag">Dart</span>
+                <span class="lang-tag">Python</span>
+
+                <span class="ml-tag">PyTorch</span>
+                <span class="ml-tag">Scikit-Learn</span>
+                <span class="ml-tag">NumPy</span>
+                <span class="ml-tag">Pandas</span>
+                <span class="ml-tag">Matplotlib</span>
+
+                <span class="web-tag">Flutter</span>
+                <span class="web-tag">React.js</span>
+                <span class="web-tag">Next.js</span>
+                <span class="web-tag">Tailwind CSS</span>
+                <span class="web-tag">PostgreSQL</span>
+            </div>
+        </section>
+
+        <!-- EXPERIENCE SECTION -->
+        <section id="experience" class="experience">
+            <h2 class="section-title">Professional <span class="highlight">Experience</span></h2>
+            <div class="epic-timeline">
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">10/2025 - Present</div>
+                        <h3>Technical Lead (CTO) <br><a href="https://www.sunitiq.com" target="_blank" class="highlight"
+                                style="text-decoration: none;">@Sunitiq-AI LLP</a></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Developed EpiAlert - India's First Disease Outbreak Prediction System.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">01/2026 - Present</div>
+                        <h3>Campus Ambassador <br><span class="highlight">@HackerRank</span></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Setup and Created HackerRank Campus Crew (HRCC) in my college.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">09/2025 - Present</div>
+                        <h3>R&D Team Member <br><span class="highlight">@AI Club, MITS Gwalior</span></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Active involvement in AI research and development initiatives.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">09/2025 - 03/2026</div>
+                        <h3>Technical Committee Member <br><span class="highlight">@GFG Campus Body</span></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Organised two major DSA contests (Coderush and Coderush2.0).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROJECTS SECTION -->
+        <!-- INFINITE STROKE MARQUEE -->
+        <div class="marquee-container">
+            <div class="marquee-content">
+                <span>PROJECTS • ROLES • EXPERIENCE • EDUCATION • TECHNOLOGY STACKS •&nbsp;</span>
+                <span>PROJECTS • ROLES • EXPERIENCE • EDUCATION • TECHNOLOGY STACKS •&nbsp;</span>
+                <span>PROJECTS • ROLES • EXPERIENCE • EDUCATION • TECHNOLOGY STACKS •&nbsp;</span>
+                <span>PROJECTS • ROLES • EXPERIENCE • EDUCATION • TECHNOLOGY STACKS •&nbsp;</span>
+            </div>
+        </div>
+
+        <section id="projects" class="projects">
+            <h2 class="section-title split-text">Featured <span class="highlight">Projects</span></h2>
+            <div class="projects-stack">
+                <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
+                    data-title="EpiAlert" data-subtitle="Disease Outbreak Prediction System"
+                    data-image="./assets/epialert.png"
+                    data-desc="EpiAlert is an innovative platform designed as India's first disease outbreak prediction system. By integrating heterogeneous data sources, it detects rising outbreak risks earlier than traditional surveillance methods, enabling a proactive public health response. Additionally, this intelligent system significantly transforms traditional tracking to provide incredible predictive capabilities. To drive engagement and streamline vital data collection, the project features the EpiAlert Health Heroes interface, a gamified dashboard built specifically for surveying and filling forms. Ultimately, EpiAlert leverages advanced modeling to safeguard communities and effectively revolutionize modern healthcare monitoring with unparalleled technical precision, strategic foresight, and immense potential for future public safety.">
+                    <div class="project-header">
+                        <i data-lucide="activity"></i>
+                        <h3>EpiAlert</h3>
+                    </div>
+                    <p class="project-tagline">Disease Outbreak Prediction System</p>
+                    <p>Integrates heterogeneous data sources to detect rising outbreak risks earlier than traditional
+                        surveillance systems, enabling proactive public health response. Features a gamified dashboard and advanced predictive modeling to safeguard communities.</p>
+                    <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                </div>
+                <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
+                    data-title="CollabGrid" data-subtitle="Technical Matchmaker" data-image="./assets/collabgrid.png"
+                    data-techstack="Flutter, Dart, Node.js, PostgreSQL, Firebase, Google Auth, Github Auth"
+                    data-desc="CollabGrid is a technical matchmaker and cross-platform mobile application developed using Flutter. The platform is brilliantly designed to revolutionize how students form technical teams for hackathons and other projects in the college campus. By directly addressing the significant challenge of finding teammates with complementary skills, CollabGrid replaces random grouping with intelligent, data-driven matching. Users efficiently create technical profiles highlighting their specific expertise, including web dev, ML, or design. An automated algorithm then suggests highly compatible partners, bridging the gap between isolated talent and collaborative success to foster innovation and ensure every team is perfectly balanced for future development endeavors today.">
+                    <div class="project-header">
+                        <i data-lucide="users"></i>
+                        <h3>CollabGrid</h3>
+                    </div>
+                    <p class="project-tagline">Technical Matchmaker</p>
+                    <p>Cross-platform Flutter application addressing the challenge of finding teammates with
+                        complementary skills for hackathons using intelligent, data-driven matching. Replaces random grouping with automated algorithms for balanced team creation.</p>
+                    <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                </div>
+                <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
+                    data-title="Smart Attend" data-subtitle="Automated Attendance System for Rural Schools"
+                    data-image="./assets/smartattend.png"
+                    data-techstack="Tech Stack: Python, OpenCV, IoT (RFID), SQLite. Additional details about the architecture, challenges solved, and specific implementations will be added here soon."
+                    data-desc="Smart Attend is an innovative, automated attendance system specifically built for rural schools to modernize daily classroom administration. Its uniqueness stems from offering a low-cost entry point while remaining highly flexible and scalable. Operating as a versatile dual-mode system, it seamlessly utilizes both advanced facial recognition and efficient QR or RFID tag scanning. Recognizing the need for accessibility, the platform features a clean, icon-based, multilingual user interface. This simple UI ensures ultimate ease of use for teachers and students with minimal tech experience, overcoming traditional barriers to effectively streamline daily educational operations everywhere and empowering rural learning communities immensely today.">
+                    <div class="project-header">
+                        <i data-lucide="scan-face"></i>
+                        <h3>Smart Attend</h3>
+                    </div>
+                    <p class="project-tagline">Automated Attendance System for Rural Schools</p>
+                    <p>Low-cost dual mode system (Facial recognition, QR/RFID tags scan) with a simple UI designed for
+                        teachers and students with minimal tech experience. Highly flexible, scalable, and effectively streamlines daily educational operations.</p>
+                    <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EDUCATION & ACHIEVEMENTS SECTION -->
+        <section id="education" class="education">
+            <h2 class="section-title">Education & <span class="highlight">Achievements</span></h2>
+            <div class="education-grid">
+                <div class="glass-card ed-card">
+                    <i data-lucide="graduation-cap" class="ed-icon"></i>
+                    <h3>B.Tech in Mathematics and Computing</h3>
+                    <p>Madhav Institute of Technology and Science, Gwalior</p>
+                    <p class="date">08/2025 - Present</p>
+                </div>
+                <div class="glass-card ed-card">
+                    <i data-lucide="award" class="ed-icon"></i>
+                    <h3>Test Scores & Ranks</h3>
+                    <ul class="achievement-list">
+                        <li><strong>AIR 67</strong> (99.8 %ile) JEE Main Paper 2B (UP State Topper)</li>
+                        <li><strong>AIR 666</strong> (99.0961 %ile) JEE Main Paper 2A</li>
+                        <li><strong>AIR 1165</strong> in B.Tech Common Merit List of MP-DTE</li>
+                    </ul>
+                </div>
+                <div class="glass-card ed-card">
+                    <i data-lucide="trophy" class="ed-icon"></i>
+                    <h3>Extracurriculars & Honors</h3>
+                    <ul class="achievement-list">
+                        <li>Winner of AI-Unboxed by Soft Computing Research Society</li>
+                        <li>Gold Medal of Distinction - SOF IMO 2023</li>
+                        <li>AICTE IDE Bootcamp Winner - Represented Sunitiq in the Bootcamp (Top 5 Startup Teams)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="contact">
+            <h2 class="section-title">Get In <span class="highlight">Touch</span></h2>
+            <div class="contact-links">
+                <a href="mailto:aviralpathak007@gmail.com" class="glass-card contact-card">
+                    <i data-lucide="mail"></i>
+                    <h3>Email Me</h3>
+                    <p>aviralpathak007@gmail.com</p>
+                </a>
+                <a href="https://www.linkedin.com/in/pathakaviral07" target="_blank" class="glass-card contact-card">
+                    <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24" fill="currentColor">
+                        <path
+                            d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                    </svg>
+                    <h3>LinkedIn</h3>
+                    <p>Connect professionally</p>
+                </a>
+                <a href="https://github.com/aviralpathak007" target="_blank" class="glass-card contact-card">
+                    <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24" fill="currentColor">
+                        <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    <h3>GitHub</h3>
+                    <p>View my repositories</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+
+
+    <footer class="parallax-footer">
+        <div class="footer-content">
+            <h2 class="huge-footer-text">LET'S<br>TALK.</h2>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Aviral Pathak. All rights reserved.</p>
+                <div class="footer-socials">
+                    <a href="https://www.instagram.com/aviralpathak07/" target="_blank" class="magnetic">Instagram</a>
+                    <a href="https://www.linkedin.com/in/pathakaviral07" target="_blank" class="magnetic">LinkedIn</a>
+                    <a href="https://github.com/aviralpathak007" target="_blank" class="magnetic">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Role Popup Modal -->
+    <div id="role-modal" class="role-modal hide">
+        <div class="role-modal-content glass-card" data-lenis-prevent>
+            <button id="close-role-modal" class="close-btn magnetic"><i data-lucide="x"></i></button>
+            <div class="role-modal-image">
+                <img id="role-modal-img" src="" alt="Role Image">
+            </div>
+            <div class="role-modal-body">
+                <h2 id="role-modal-title"></h2>
+                <h4 id="role-modal-subtitle" class="accent"></h4>
+                <p id="role-modal-desc"></p>
+                
+                <div id="role-modal-techstack-container" style="display: none; margin-top: 2rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 0.5rem; font-size: 1.5rem;">Tech Stacks Used</h3>
+                    <p id="role-modal-techstack" style="color: var(--text-secondary);"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
