@@ -1271,6 +1271,13 @@ body.loading {
     }
 }
 
+.sticky-project,
+.sticky-project:hover {
+    /* Stacked cards overlap, so they must be opaque (the translucent glass background
+       let the card underneath show through) */
+    background: var(--bg-secondary);
+}
+
 .sticky-project {
     position: sticky;
     top: 150px;
@@ -1281,6 +1288,7 @@ body.loading {
 .sticky-project:nth-child(1) { top: 120px; z-index: 10; }
 .sticky-project:nth-child(2) { top: 150px; z-index: 20; }
 .sticky-project:nth-child(3) { top: 180px; z-index: 30; }
+.sticky-project:nth-child(4) { top: 210px; z-index: 40; }
 
 /* Physics Sandbox */
 .skills-key {
@@ -1312,11 +1320,13 @@ body.loading {
     --lang-color: rgba(255, 65, 105, 0.8);
     --ml-color: rgba(65, 105, 255, 0.8);
     --web-color: rgba(0, 255, 204, 0.8);
+    --tool-color: rgba(255, 165, 0, 0.85);
 }
 
 .lang-dot { background: var(--lang-color); box-shadow: 0 0 10px var(--lang-color); }
 .ml-dot { background: var(--ml-color); box-shadow: 0 0 10px var(--ml-color); }
 .web-dot { background: var(--web-color); box-shadow: 0 0 10px var(--web-color); }
+.tool-dot { background: var(--tool-color); box-shadow: 0 0 10px var(--tool-color); }
 
 /* Terminal Decryption Reveal */
 .terminal-window {
@@ -1418,6 +1428,7 @@ body.loading {
 .decrypted-tag.lang-tag { border-color: var(--lang-color); box-shadow: 0 0 10px rgba(255, 65, 105, 0.2); }
 .decrypted-tag.ml-tag { border-color: var(--ml-color); box-shadow: 0 0 10px rgba(65, 105, 255, 0.2); }
 .decrypted-tag.web-tag { border-color: var(--web-color); box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); }
+.decrypted-tag.tool-tag { border-color: var(--tool-color); box-shadow: 0 0 10px rgba(255, 165, 0, 0.2); }
 
 .decrypted-tag:hover {
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
@@ -1454,6 +1465,7 @@ body.loading {
 :root.light-theme .decrypted-tag.lang-tag { border-color: var(--lang-color); }
 :root.light-theme .decrypted-tag.ml-tag { border-color: var(--ml-color); }
 :root.light-theme .decrypted-tag.web-tag { border-color: var(--web-color); }
+:root.light-theme .decrypted-tag.tool-tag { border-color: var(--tool-color); }
 
 :root.light-theme .decrypted-tag:hover {
     background: #ffffff;

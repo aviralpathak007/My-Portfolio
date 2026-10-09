@@ -1509,11 +1509,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalTechStackContainer.style.display = 'none';
                 }
                 
-                // Fallback to placeholder if image fails to load
-                modalImg.src = imagePath;
-                modalImg.onerror = () => {
-                    modalImg.src = 'https://via.placeholder.com/800x300/1a1a2e/00ffcc?text=' + encodeURIComponent(title);
-                };
+                // Projects/roles without an image (or whose image fails to load) simply show no banner
+                const imageWrap = modalImg.parentElement;
+                if (imagePath) {
+                    imageWrap.style.display = '';
+                    modalImg.onerror = () => { imageWrap.style.display = 'none'; };
+                    modalImg.src = imagePath;
+                } else {
+                    imageWrap.style.display = 'none';
+                    modalImg.removeAttribute('src');
+                }
 
                 roleModal.classList.remove('hide');
                 // Trigger reflow

@@ -282,6 +282,7 @@
                 <span class="key-item"><span class="key-dot lang-dot"></span> Languages</span>
                 <span class="key-item"><span class="key-dot ml-dot"></span> ML & Data Science</span>
                 <span class="key-item"><span class="key-dot web-dot"></span> Frameworks & Web</span>
+                <span class="key-item"><span class="key-dot tool-dot"></span> Architecture & Tools</span>
             </div>
 
             <div id="terminal-sandbox" class="terminal-window glass-card">
@@ -307,12 +308,34 @@
                 <span class="ml-tag">NumPy</span>
                 <span class="ml-tag">Pandas</span>
                 <span class="ml-tag">Matplotlib</span>
+                <span class="ml-tag">Seaborn</span>
+                <span class="ml-tag">Supervised &amp; Unsupervised Learning</span>
+                <span class="ml-tag">Statistical Modelling</span>
+                <span class="ml-tag">Data Preprocessing</span>
 
                 <span class="web-tag">Flutter</span>
                 <span class="web-tag">React.js</span>
                 <span class="web-tag">Next.js</span>
                 <span class="web-tag">Tailwind CSS</span>
+                <span class="web-tag">Bootstrap</span>
+                <span class="web-tag">MUI</span>
+                <span class="web-tag">Flexbox</span>
                 <span class="web-tag">PostgreSQL</span>
+                <span class="web-tag">SQL</span>
+
+                <span class="tool-tag">REST API</span>
+                <span class="tool-tag">Component-Based Architecture</span>
+                <span class="tool-tag">Widget Tree</span>
+                <span class="tool-tag">Element Tree</span>
+                <span class="tool-tag">Stateless vs. Stateful Widgets</span>
+                <span class="tool-tag">Provider</span>
+                <span class="tool-tag">Riverpod</span>
+                <span class="tool-tag">Git/GitHub</span>
+                <span class="tool-tag">Android Studio</span>
+                <span class="tool-tag">Figma (Basic)</span>
+                <span class="tool-tag">PSPP</span>
+                <span class="tool-tag">Jupyter Notebook</span>
+                <span class="tool-tag">Google Colab</span>
             </div>
         </section>
 
@@ -320,6 +343,38 @@
         <section id="experience" class="experience">
             <h2 class="section-title">Professional <span class="highlight">Experience</span></h2>
             <div class="epic-timeline">
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">07/2026 - Present</div>
+                        <h3>Founder's Office (Tech) <br><span class="highlight">@Vritam Technologies Pvt. Ltd.</span></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Spearhead technical initiatives across AI, robotics and automation, reporting directly to the Founder. Build cross-platform Flutter/Dart apps that control industrial automation systems, and design and deploy custom Machine Learning models for predictive analytics in core robotic solutions. Gwalior, India.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row">
+                    <div class="timeline-left">
+                        <div class="timeline-date">08/2026 - 09/2026</div>
+                        <h3>Student Builder Campus Leader <br><span class="highlight">@AWS</span></h3>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="timeline-node"></div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-right">
+                        <div class="glass-card desc-card">
+                            <p>Led AWS initiatives at MITS Gwalior, growing a student cloud developer community. Organised technical workshops bridging academics with industry cloud practices and mentored peers on core AWS services, including deploying full-stack web and machine learning applications.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="timeline-row">
                     <div class="timeline-left">
                         <div class="timeline-date">10/2025 - Present</div>
@@ -402,6 +457,20 @@
             <h2 class="section-title split-text">Featured <span class="highlight">Projects</span></h2>
             <div class="projects-stack">
                 <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
+                    data-title="SignStream" data-subtitle="Continuous Sign Language Recognition (CSLR) App"
+                    data-techstack="Flutter, React.js, MediaPipe, OpenCV, PyTorch, Bidirectional LSTM, CTC Loss, Node.js, FastAPI, Socket.io, PostgreSQL"
+                    data-desc="SignStream-CSLR translates continuous sign language into real-time text and speech. Built with Flutter and React.js, it uses MediaPipe and OpenCV to extract 3D skeletal coordinates from live video on the edge, which removes the latency of sending high-bandwidth video. A PyTorch pipeline decodes unsegmented spatio-temporal gestures using bidirectional LSTMs trained with Connectionist Temporal Classification (CTC) loss, so the model can interpret fluid, continuous hand movement over time. An event-driven streaming backend (Node.js, FastAPI, Socket.io) with PostgreSQL for vocabulary mapping delivers sub-second inference latency, making it an accessible and seamless communication tool.">
+                    <div class="project-header">
+                        <i data-lucide="hand"></i>
+                        <h3>SignStream</h3>
+                    </div>
+                    <p class="project-tagline">Continuous Sign Language Recognition (CSLR) App</p>
+                    <p>Translates continuous sign language into real-time text and speech. MediaPipe and OpenCV extract
+                        skeletal coordinates on the edge, a PyTorch BiLSTM + CTC model decodes the gestures, and a
+                        Socket.io streaming backend keeps inference under a second.</p>
+                    <div class="card-hint">Click to view details <i data-lucide="arrow-up-right"></i></div>
+                </div>
+                <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
                     data-title="EpiAlert" data-subtitle="Disease Outbreak Prediction System"
                     data-image="./assets/epialert.jpg"
                     data-desc="EpiAlert is an innovative platform designed as India's first disease outbreak prediction system. By integrating heterogeneous data sources, it detects rising outbreak risks earlier than traditional surveillance methods, enabling a proactive public health response. Additionally, this intelligent system significantly transforms traditional tracking to provide incredible predictive capabilities. To drive engagement and streamline vital data collection, the project features the EpiAlert Health Heroes interface, a gamified dashboard built specifically for surveying and filling forms. Ultimately, EpiAlert leverages advanced modeling to safeguard communities and effectively revolutionize modern healthcare monitoring with unparalleled technical precision, strategic foresight, and immense potential for future public safety.">
@@ -416,8 +485,8 @@
                 </div>
                 <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
                     data-title="CollabGrid" data-subtitle="Technical Matchmaker" data-image="./assets/collabgrid.png"
-                    data-techstack="Flutter, Dart, Node.js, PostgreSQL, Firebase, Google Auth, Github Auth"
-                    data-desc="CollabGrid is a technical matchmaker and cross-platform mobile application developed using Flutter. The platform is brilliantly designed to revolutionize how students form technical teams for hackathons and other projects in the college campus. By directly addressing the significant challenge of finding teammates with complementary skills, CollabGrid replaces random grouping with intelligent, data-driven matching. Users efficiently create technical profiles highlighting their specific expertise, including web dev, ML, or design. An automated algorithm then suggests highly compatible partners, bridging the gap between isolated talent and collaborative success to foster innovation and ensure every team is perfectly balanced for future development endeavors today.">
+                    data-techstack="Flutter, Dart, Riverpod, Node.js, PostgreSQL, Scikit-learn, TensorFlow, NLP Embeddings, Firebase, Google Auth, Github Auth"
+                    data-desc="CollabGrid is a technical matchmaker and cross-platform mobile application developed using Flutter. The platform is brilliantly designed to revolutionize how students form technical teams for hackathons and other projects in the college campus. By directly addressing the significant challenge of finding teammates with complementary skills, CollabGrid replaces random grouping with intelligent, data-driven matching. Users efficiently create technical profiles highlighting their specific expertise, including web dev, ML, or design. An automated algorithm built with Scikit-learn and TensorFlow NLP embeddings then suggests highly compatible partners, bridging the gap between isolated talent and collaborative success to foster innovation and ensure every team is perfectly balanced for future development endeavors today.">
                     <div class="project-header">
                         <i data-lucide="users"></i>
                         <h3>CollabGrid</h3>
@@ -430,8 +499,8 @@
                 <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
                     data-title="Smart Attend" data-subtitle="Automated Attendance System for Rural Schools"
                     data-image="./assets/smartattend.jpg"
-                    data-techstack="Tech Stack: Python, OpenCV, IoT (RFID), SQLite. Additional details about the architecture, challenges solved, and specific implementations will be added here soon."
-                    data-desc="Smart Attend is an innovative, automated attendance system specifically built for rural schools to modernize daily classroom administration. Its uniqueness stems from offering a low-cost entry point while remaining highly flexible and scalable. Operating as a versatile dual-mode system, it seamlessly utilizes both advanced facial recognition and efficient QR or RFID tag scanning. Recognizing the need for accessibility, the platform features a clean, icon-based, multilingual user interface. This simple UI ensures ultimate ease of use for teachers and students with minimal tech experience, overcoming traditional barriers to effectively streamline daily educational operations everywhere and empowering rural learning communities immensely today.">
+                    data-techstack="OpenCV, TensorFlow, QR &amp; RFID hardware module, React.js, Node.js, PostgreSQL"
+                    data-desc="Smart Attend is an innovative, automated attendance system specifically built for rural schools to modernize daily classroom administration. Its uniqueness stems from offering a low-cost entry point while remaining highly flexible and scalable. Operating as a versatile dual-mode system, it uses OpenCV and TensorFlow for high-accuracy facial recognition, backed by a hardware-integrated QR and RFID tag scanning module for operational redundancy. A React.js client with a Node.js and PostgreSQL backend keeps the data secure. Recognizing the need for accessibility, the platform features a clean, icon-based, multilingual user interface. This simple UI ensures ultimate ease of use for teachers and students with minimal tech experience, overcoming traditional barriers to effectively streamline daily educational operations everywhere and empowering rural learning communities immensely today.">
                     <div class="project-header">
                         <i data-lucide="scan-face"></i>
                         <h3>Smart Attend</h3>
@@ -461,6 +530,7 @@
                         <li><strong>AIR 67</strong> (99.8 %ile) JEE Main Paper 2B (UP State Topper)</li>
                         <li><strong>AIR 666</strong> (99.0961 %ile) JEE Main Paper 2A</li>
                         <li><strong>AIR 1165</strong> in B.Tech Common Merit List of MP-DTE</li>
+                        <li><strong>AIR 19</strong> in GBUET-24</li>
                     </ul>
                 </div>
                 <div class="glass-card ed-card">
@@ -468,8 +538,13 @@
                     <h3>Extracurriculars & Honors</h3>
                     <ul class="achievement-list">
                         <li>Winner of AI-Unboxed by Soft Computing Research Society</li>
-                        <li>Gold Medal of Distinction - SOF IMO 2023</li>
-                        <li>AICTE IDE Bootcamp Winner - Represented Sunitiq in the Bootcamp (Top 5 Startup Teams)</li>
+                        <li>AICTE IDE Bootcamp Winner - Represented Sunitiq in the Bootcamp (Top 5 Teams)</li>
+                        <li>Selected for Smart India Hackathon (SIH)'26 - second round</li>
+                        <li>Finalist at HackIgnite 1.0 &middot; Participated in 7 Hackathons</li>
+                        <li>Endurance Race winner at Hindustan Formula Karting Championship (HFKC) Season 6, Bhopal</li>
+                        <li>Gold Medal of Distinction - SOF IMO 2023 (Zonal Rank 1)</li>
+                        <li>Silver Medal - National Hindi Olympiad 2019</li>
+                        <li>Student Representative in the Anti-Ragging Committee</li>
                     </ul>
                 </div>
             </div>
