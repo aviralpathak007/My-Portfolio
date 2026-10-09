@@ -1,16 +1,74 @@
 // Initialize Lucide Icons
 lucide.createIcons();
 
-// Smooth scrolling for anchor links (if native smooth scroll is not enough)
+// ==========================================
+// SHARED SCROLL SCHEDULER
+// One passive listener, at most one run per frame. Every scroll-driven effect
+// registers here instead of attaching its own window 'scroll' listener.
+// ==========================================
+const scrollHandlers = [];
+let scrollScheduled = false;
+function onScroll(fn) {
+    scrollHandlers.push(fn);
+}
+function runScrollHandlers() {
+    scrollScheduled = false;
+    for (let i = 0; i < scrollHandlers.length; i++) scrollHandlers[i]();
+}
+window.addEventListener('scroll', () => {
+    if (!scrollScheduled) {
+        scrollScheduled = true;
+        requestAnimationFrame(runScrollHandlers);
+    }
+}, { passive: true });
+
+// Document-relative top of an element. Uses offsetTop so CSS transforms (e.g. the
+// pending .fade-in translateY) don't skew the measurement.
+function docOffsetTop(el) {
+    let top = 0;
+    while (el) {
+        top += el.offsetTop;
+        el = el.offsetParent;
+    }
+    return top;
+}
+
+// Re-run `fn` (rAF-throttled) on resize, full load, and whenever the page height changes
+function onLayoutChange(fn) {
+    let queued = false;
+    const run = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+            queued = false;
+            fn();
+        });
+    };
+    window.addEventListener('resize', run);
+    window.addEventListener('load', run);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(run).observe(document.body);
+}
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isTouchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+// Anchor links: Lenis handles smooth scrolling (see MOMENTUM SCROLLING below).
+// Fall back to native smooth scrolling only if Lenis fails to load.
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+        const targetId = this.getAttribute('href');
+        if (window.lenis) {
+            if (targetId && targetId !== '#') {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) window.lenis.scrollTo(targetElement);
+            } else {
+                window.lenis.scrollTo(0);
+            }
+        } else {
+            const target = targetId && targetId !== '#' ? document.querySelector(targetId) : null;
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 });
@@ -18,35 +76,15 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // Add fade-in class initially to hide elements
 const animateElements = document.querySelectorAll('section, .glass-card, .section-title, .curtain-reveal-container, .timeline-row');
 animateElements.forEach((el, index) => {
-    if (!el.classList.contains('curtain-reveal-container') && !el.classList.contains('reveal-content')) {
+    // Role cards live in the horizontal-scroll track (clipped by overflow: hidden), so an
+    // IntersectionObserver-driven fade can fire late and leave the first card dim. Skip it for them.
+    if (!el.classList.contains('curtain-reveal-container') && !el.classList.contains('reveal-content')
+        && !el.classList.contains('role-card')) {
         el.classList.add('fade-in');
     }
     if (el.classList.contains('glass-card') && !el.classList.contains('reveal-content')) {
         el.style.transitionDelay = `${(index % 4) * 0.1}s`;
     }
-});
-
-// Epic 3D Interactive Cards
-document.querySelectorAll('.glass-card').forEach(card => {
-    card.addEventListener('mousemove', e => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        const rotateX = ((y - centerY) / centerY) * -10; // Max 10 deg tilt
-        const rotateY = ((x - centerX) / centerX) * 10;
-
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-        card.style.zIndex = '10'; // Bring to front
-    });
-
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = ''; // Fallback to CSS transitions
-        card.style.zIndex = '';
-    });
 });
 
 function initObserver() {
@@ -78,23 +116,34 @@ function initObserver() {
     animateElements.forEach(el => observer.observe(el));
 }
 
-// Custom Cursor Tracking
+// Custom Cursor Tracking (transform-only, one rAF-driven update per frame)
 const cursorDot = document.querySelector('[data-cursor-dot]');
 const cursorOutline = document.querySelector('[data-cursor-outline]');
 
-if (cursorDot && cursorOutline) {
+if (cursorDot && cursorOutline && !isTouchDevice) {
+    let cursorX = -100, cursorY = -100;
+    let outlineX = -100, outlineY = -100;
+    let cursorRaf = null;
+
+    function renderCursor() {
+        // Outline eases toward the dot instead of spawning a new animation per mousemove
+        outlineX += (cursorX - outlineX) * 0.2;
+        outlineY += (cursorY - outlineY) * 0.2;
+        cursorDot.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
+        cursorOutline.style.transform = `translate3d(${outlineX}px, ${outlineY}px, 0) translate(-50%, -50%)`;
+
+        if (Math.abs(cursorX - outlineX) > 0.1 || Math.abs(cursorY - outlineY) > 0.1) {
+            cursorRaf = requestAnimationFrame(renderCursor);
+        } else {
+            cursorRaf = null;
+        }
+    }
+
     window.addEventListener('mousemove', function (e) {
-        const posX = e.clientX;
-        const posY = e.clientY;
-
-        cursorDot.style.left = `${posX}px`;
-        cursorDot.style.top = `${posY}px`;
-
-        cursorOutline.animate({
-            left: `${posX}px`,
-            top: `${posY}px`
-        }, { duration: 500, fill: "forwards" });
-    });
+        cursorX = e.clientX;
+        cursorY = e.clientY;
+        if (cursorRaf === null) cursorRaf = requestAnimationFrame(renderCursor);
+    }, { passive: true });
 
     // Interactive hover effect for custom cursor
     document.querySelectorAll('a, button, .glass-card, .tag, .btn-icon, .magnetic').forEach(el => {
@@ -111,24 +160,19 @@ if (cursorDot && cursorOutline) {
 
 // Preloader Logic is now handled by the Epic UX Features block at the bottom of this file.
 
-// Dynamic background parallax effect on scroll
-window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    const bgGrid = document.querySelector('.bg-grid');
-    if (bgGrid) {
-        bgGrid.style.transform = `translateY(${scrollY * 0.2}px)`;
-    }
-
-    // Dynamic Heading background position
-    const aboutHeading = document.getElementById('about-heading');
-    if (aboutHeading) {
+// Dynamic heading background position on scroll
+// (the old .bg-grid translateY parallax was removed: the grid is position: fixed,
+// so translating it just slid it off screen)
+const aboutHeading = document.getElementById('about-heading');
+if (aboutHeading) {
+    onScroll(() => {
         const rect = aboutHeading.getBoundingClientRect();
         if (rect.top < window.innerHeight && rect.bottom > 0) {
             const scrollPercent = 1 - (rect.top / window.innerHeight);
             aboutHeading.style.backgroundPosition = `${scrollPercent * 300}% center`;
         }
-    }
-});
+    });
+}
 
 // Theme Toggle Logic
 const themeBtn = document.getElementById('theme-toggle');
@@ -171,7 +215,10 @@ document.addEventListener('click', (e) => {
 
     let width, height;
     let particles = [];
-    const particleCount = 200; // Number of floating orbs
+    // Fewer orbs on small/touch screens; the pair-wise link check is O(n^2)
+    const particleCount = (isTouchDevice || window.innerWidth < 768) ? 60 : 120;
+    const linkDistance = 150;
+    const linkBuckets = 4; // batch links by opacity so we stroke 4 paths per frame, not hundreds
 
     // Mouse Interaction Variables
     let mouse = { x: -1000, y: -1000 };
@@ -197,10 +244,14 @@ document.addEventListener('click', (e) => {
         }
     }
 
-    // Resize canvas
+    // Resize canvas (backing store capped at 1.5x to avoid a huge buffer on retina screens)
     function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     window.addEventListener('resize', resize);
@@ -215,7 +266,7 @@ document.addEventListener('click', (e) => {
     window.addEventListener('mousemove', (e) => {
         mouse.x = e.clientX;
         mouse.y = e.clientY;
-    });
+    }, { passive: true });
 
     window.addEventListener('mouseout', () => {
         mouse.x = -1000;
@@ -269,13 +320,6 @@ document.addEventListener('click', (e) => {
                 this.y = Math.max(0, Math.min(this.y, height));
             }
         }
-
-        draw() {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = particleColor;
-            ctx.fill();
-        }
     }
 
     // Initialize particles
@@ -284,36 +328,79 @@ document.addEventListener('click', (e) => {
     }
 
     // Animation Loop
+    let bgRaf = null;
+    const linkBatches = Array.from({ length: linkBuckets }, () => []);
+
     function animate() {
         ctx.clearRect(0, 0, width, height);
 
+        for (let b = 0; b < linkBuckets; b++) linkBatches[b].length = 0;
+
+        ctx.fillStyle = particleColor;
+        ctx.beginPath();
         for (let i = 0; i < particles.length; i++) {
-            particles[i].update();
-            particles[i].draw();
+            const p = particles[i];
+            p.update();
+            // All orbs in a single fill
+            ctx.moveTo(p.x + p.radius, p.y);
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
 
-            // Draw connections between nearby particles
+            // Collect connections between nearby particles
             for (let j = i + 1; j < particles.length; j++) {
-                const dx = particles[i].x - particles[j].x;
-                const dy = particles[i].y - particles[j].y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                const q = particles[j];
+                const dx = p.x - q.x;
+                const dy = p.y - q.y;
+                const distSq = dx * dx + dy * dy;
 
-                if (distance < 150) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = connectionColor;
-                    // Make opacity dependent on distance
-                    ctx.globalAlpha = 1 - (distance / 150);
-                    ctx.lineWidth = 0.8;
-                    ctx.moveTo(particles[i].x, particles[i].y);
-                    ctx.lineTo(particles[j].x, particles[j].y);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1.0;
+                if (distSq < linkDistance * linkDistance) {
+                    const strength = 1 - Math.sqrt(distSq) / linkDistance;
+                    const bucket = Math.min(linkBuckets - 1, Math.floor(strength * linkBuckets));
+                    linkBatches[bucket].push(p.x, p.y, q.x, q.y);
                 }
             }
         }
-        requestAnimationFrame(animate);
+        ctx.fill();
+
+        ctx.strokeStyle = connectionColor;
+        ctx.lineWidth = 0.8;
+        for (let b = 0; b < linkBuckets; b++) {
+            const lines = linkBatches[b];
+            if (!lines.length) continue;
+            ctx.globalAlpha = (b + 0.5) / linkBuckets;
+            ctx.beginPath();
+            for (let k = 0; k < lines.length; k += 4) {
+                ctx.moveTo(lines[k], lines[k + 1]);
+                ctx.lineTo(lines[k + 2], lines[k + 3]);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0;
+
+        bgRaf = requestAnimationFrame(animate);
     }
 
-    animate();
+    function startBg() {
+        if (bgRaf === null && !prefersReducedMotion) bgRaf = requestAnimationFrame(animate);
+    }
+    function stopBg() {
+        if (bgRaf !== null) {
+            cancelAnimationFrame(bgRaf);
+            bgRaf = null;
+        }
+    }
+
+    // Don't burn CPU/GPU while the tab is hidden
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopBg(); else startBg();
+    });
+
+    if (prefersReducedMotion) {
+        // Draw one static frame
+        animate();
+        stopBg();
+    } else {
+        startBg();
+    }
 })();
 
 // ==========================================
@@ -351,15 +438,15 @@ magneticElements.forEach((el) => {
 // ==========================================
 // MOMENTUM SCROLLING (LENIS)
 // ==========================================
-if (typeof Lenis !== 'undefined') {
+if (typeof Lenis !== 'undefined' && !prefersReducedMotion) {
     window.lenis = new Lenis({
         duration: 1.2,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
-        direction: 'vertical',
-        gestureDirection: 'vertical',
-        smooth: true,
-        mouseMultiplier: 1,
-        smoothTouch: false,
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        syncTouch: false, // keep native momentum on touch devices
         touchMultiplier: 2,
         infinite: false,
     });
@@ -370,22 +457,7 @@ if (typeof Lenis !== 'undefined') {
     }
 
     requestAnimationFrame(raf);
-
-    // Update existing smooth scroll links to use lenis
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            if (targetId && targetId !== '#') {
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    window.lenis.scrollTo(targetElement);
-                }
-            } else if (targetId === '#') {
-                window.lenis.scrollTo(0);
-            }
-        });
-    });
+    // Anchor links use window.lenis.scrollTo (see the anchor handler at the top of this file)
 }
 
 // ==========================================
@@ -417,38 +489,37 @@ if (parallaxFooter && footerContent) {
         }
     };
 
-    window.addEventListener('scroll', scrollCallback);
+    onScroll(scrollCallback);
     scrollCallback();
 }
 
 // 2. Scroll-Driven Circuit SVG Logic
 const circuitPath = document.getElementById('circuit-path');
+const circuitGlow = document.getElementById('circuit-glow');
 if (circuitPath) {
     const pathLength = circuitPath.getTotalLength();
-    circuitPath.style.strokeDasharray = pathLength;
-    circuitPath.style.strokeDashoffset = pathLength; // Start completely hidden
+    [circuitPath, circuitGlow].forEach(path => {
+        if (!path) return;
+        path.style.strokeDasharray = pathLength;
+        path.style.strokeDashoffset = pathLength; // Start completely hidden
+    });
 
-    window.addEventListener('scroll', () => {
-        // Calculate scroll percentage (0 to 1)
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight;
-        const winHeight = window.innerHeight;
-        const scrollPercent = scrollTop / (docHeight - winHeight);
+    // Cache the document height; reading scrollHeight on every scroll forces layout
+    let circuitScrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    onLayoutChange(() => {
+        circuitScrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    });
 
-        // Draw path based on percentage
-        const drawLength = pathLength * scrollPercent;
-        circuitPath.style.strokeDashoffset = pathLength - drawLength;
+    let lastCircuitOffset = -1;
+    onScroll(() => {
+        const scrollPercent = Math.min(1, Math.max(0, window.scrollY / circuitScrollable));
+        const offset = pathLength - pathLength * scrollPercent;
+        if (Math.abs(offset - lastCircuitOffset) < 0.5) return;
+        lastCircuitOffset = offset;
+        circuitPath.style.strokeDashoffset = offset;
+        if (circuitGlow) circuitGlow.style.strokeDashoffset = offset;
     });
 }
-
-// ==========================================
-// SCROLL PROGRESS BAR
-// ==========================================
-window.addEventListener('scroll', () => {
-    const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-    const progressBar = document.querySelector('.progress');
-    if (progressBar) progressBar.style.width = `${scrollPercent * 100}%`;
-});
 
 // ==========================================
 // HACKER SCRAMBLE HOVER EFFECT
@@ -499,13 +570,18 @@ tiltElements.forEach(card => {
     card.appendChild(glare);
     card.classList.add('tilt-card');
 
-    card.addEventListener('mousemove', (e) => {
-        // Remove bounce-back transition while tracking mouse
-        card.classList.remove('leave');
+    // Tilt only makes sense with a hovering pointer, and is motion the user may have opted out of
+    if (isTouchDevice || prefersReducedMotion) return;
 
+    let pointerX = 0, pointerY = 0;
+    let tiltRaf = null;
+
+    const applyTilt = () => {
+        tiltRaf = null;
+        // One layout read per frame at most (the page may scroll under a stationary cursor)
         const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left; // x position within the element
-        const y = e.clientY - rect.top;  // y position within the element
+        const x = pointerX - rect.left; // x position within the element
+        const y = pointerY - rect.top;  // y position within the element
 
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
@@ -514,16 +590,32 @@ tiltElements.forEach(card => {
         const tiltX = ((y - centerY) / centerY) * -15;
         const tiltY = ((x - centerX) / centerX) * 15;
 
-        // Apply 3D transform
         card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
 
         // Move the glare opposite to the mouse
         glare.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.2) 0%, transparent 60%)`;
+    };
+
+    card.addEventListener('mouseenter', () => {
+        card.style.zIndex = '10'; // Bring to front
     });
 
+    card.addEventListener('mousemove', (e) => {
+        // Remove bounce-back transition while tracking mouse
+        card.classList.remove('leave');
+        pointerX = e.clientX;
+        pointerY = e.clientY;
+        if (tiltRaf === null) tiltRaf = requestAnimationFrame(applyTilt);
+    }, { passive: true });
+
     card.addEventListener('mouseleave', () => {
+        if (tiltRaf !== null) {
+            cancelAnimationFrame(tiltRaf);
+            tiltRaf = null;
+        }
         card.classList.add('leave');
-        card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        card.style.zIndex = '';
+        card.style.transform = '';
         glare.style.background = `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, transparent 60%)`;
     });
 });
@@ -758,16 +850,50 @@ document.querySelectorAll('.magnetic, a, button').forEach(btn => {
 });
 
 // 3. Split-Text Animation
+// Splits a heading into per-character spans for the reveal animation. Words are kept
+// together (so long headings can wrap on narrow screens) and any <span class="highlight">
+// gradient text inside the heading is preserved, with the gradient spanning the whole run.
 document.querySelectorAll('.split-text').forEach(el => {
-    const text = el.innerText;
-    el.innerHTML = '';
-    text.split('').forEach((char, i) => {
+    const tokens = [];
+    el.childNodes.forEach(node => {
+        const isHighlight = node.nodeType === Node.ELEMENT_NODE && node.classList.contains('highlight');
+        const text = (node.textContent || '').replace(/\s+/g, ' ');
+        for (const ch of text) tokens.push({ ch, hl: isHighlight });
+    });
+    // Trim leading/trailing whitespace
+    while (tokens.length && tokens[0].ch === ' ') tokens.shift();
+    while (tokens.length && tokens[tokens.length - 1].ch === ' ') tokens.pop();
+
+    const hlTotal = tokens.filter(t => t.hl).length;
+    let hlIndex = 0;
+    let charIndex = 0;
+    let word = null;
+
+    el.textContent = '';
+    tokens.forEach(t => {
+        if (t.ch === ' ') {
+            el.appendChild(document.createTextNode(' '));
+            word = null;
+            if (t.hl) hlIndex++;
+            return;
+        }
+        if (!word) {
+            word = document.createElement('span');
+            word.className = 'split-word';
+            el.appendChild(word);
+        }
         const span = document.createElement('span');
-        span.innerText = char === ' ' ? '\u00A0' : char; // preserve spaces
-        span.style.transitionDelay = `${i * 0.03}s`;
-        // Highlighting logic: if we stripped the .highlight span, we should ideally keep it, 
-        // but for simplicity we will just style them all uniformly unless it's a space.
-        el.appendChild(span);
+        span.className = 'split-char';
+        span.textContent = t.ch;
+        span.style.transitionDelay = `${charIndex * 0.03}s`;
+        if (t.hl) {
+            span.classList.add('highlight');
+            span.style.backgroundSize = `${hlTotal * 100}% 100%`;
+            span.style.backgroundPosition = `${hlTotal > 1 ? (hlIndex / (hlTotal - 1)) * 100 : 0}% 0`;
+            hlIndex++;
+        }
+        word.appendChild(span);
+        charIndex++;
     });
 });
 
@@ -786,21 +912,24 @@ const experienceTrack = document.querySelector('.experience-track');
 const rolesProgressBar = document.getElementById('roles-progress');
 
 if (rolesWrapper && experienceTrack) {
-    window.addEventListener('scroll', () => {
-        const rect = rolesWrapper.getBoundingClientRect();
-        if (rect.top <= 0 && rect.bottom >= window.innerHeight) {
-            const scrollPercent = Math.abs(rect.top) / (rect.height - window.innerHeight);
-            const maxScroll = experienceTrack.scrollWidth - window.innerWidth + 100;
-            experienceTrack.style.transform = `translateX(-${scrollPercent * maxScroll}px)`;
-            
-            if (rolesProgressBar) {
-                rolesProgressBar.style.width = `${scrollPercent * 100}%`;
-            }
-        } else if (rect.top > 0) {
-            experienceTrack.style.transform = `translateX(0px)`;
-            if (rolesProgressBar) rolesProgressBar.style.width = `0%`;
-        } else if (rect.bottom < window.innerHeight) {
-            if (rolesProgressBar) rolesProgressBar.style.width = `100%`;
+    // Cache layout values; reading scrollWidth/offsetTop on every scroll tick forces reflow
+    let rolesTop = 0, rolesScrollable = 1, rolesMaxShift = 0;
+    const measureRoles = () => {
+        rolesTop = docOffsetTop(rolesWrapper);
+        rolesScrollable = Math.max(1, rolesWrapper.offsetHeight - window.innerHeight);
+        rolesMaxShift = Math.max(0, experienceTrack.scrollWidth - window.innerWidth + 100);
+    };
+    measureRoles();
+    onLayoutChange(measureRoles);
+
+    let lastRolesPercent = -1;
+    onScroll(() => {
+        const scrollPercent = Math.max(0, Math.min(1, (window.scrollY - rolesTop) / rolesScrollable));
+        if (scrollPercent === lastRolesPercent) return;
+        lastRolesPercent = scrollPercent;
+        experienceTrack.style.transform = `translate3d(-${scrollPercent * rolesMaxShift}px, 0, 0)`;
+        if (rolesProgressBar) {
+            rolesProgressBar.style.transform = `scaleX(${scrollPercent})`;
         }
     });
 }
@@ -916,6 +1045,7 @@ let neuralReqId = null;
 function startNeuralAnimation() {
     const canvas = document.getElementById('neural-canvas');
     if (!canvas) return;
+    stopNeuralAnimation(); // never run two loops at once
     const ctx = canvas.getContext('2d');
 
     // Resize canvas
@@ -976,25 +1106,44 @@ function stopNeuralAnimation() {
 // ==========================================
 // 2D SCROLL-DRIVEN CIRCUIT BRAIN
 // ==========================================
+// Performance notes: the circuit is generated once (and again only on a real resize),
+// edges are pre-sorted by start time and pre-bucketed by colour, and each frame draws
+// a handful of batched paths. The glow is a wider, faint stroke pass instead of a
+// per-edge ctx.shadowBlur, which was the main cost of the old implementation.
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById('circuit-brain');
     const section = document.getElementById('neural-core-section');
     if (!canvas || !section) return;
 
     const ctx = canvas.getContext('2d');
-    let width, height;
+    let width = 0, height = 0, dpr = 1;
 
-    let nodes = [];
-    let edges = [];
-    let maxDepth = 0;
+    let edges = []; // sorted by startNorm so a frame can binary-search how many have started
 
-    function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-        generateCircuit();
-        draw(getScrollProgress());
+    const COLOR_BUCKETS = 16;
+    const CYAN = [0, 255, 204];
+    const PURPLE = [204, 0, 255];
+    const bucketColors = [];
+    for (let b = 0; b < COLOR_BUCKETS; b++) {
+        const f = (b + 0.5) / COLOR_BUCKETS;
+        const c = CYAN.map((v, i) => Math.round(v + f * (PURPLE[i] - v)));
+        bucketColors.push(`rgb(${c[0]}, ${c[1]}, ${c[2]})`);
+    }
+
+    // Per-frame scratch buffers (reused to avoid allocations while scrolling)
+    const lineBatches = Array.from({ length: COLOR_BUCKETS }, () => []);
+    const nodeBatches = Array.from({ length: COLOR_BUCKETS }, () => []);
+    const tipBatches = Array.from({ length: COLOR_BUCKETS }, () => []);
+    const boundaryDraws = [];
+
+    // Small seeded PRNG so the circuit looks the same after every resize
+    function mulberry32(seed) {
+        return function () {
+            seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+            let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
     }
 
     function isBrain(x, y) {
@@ -1017,21 +1166,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function generateCircuit() {
-        nodes = [];
-        edges = [];
+        const rand = mulberry32(20240607);
+        const nodes = [];
         const spacing = 18;
+        const maxLink = spacing * 1.6; // allow horiz, vert, and diagonal
 
-        // 1. Generate Brain Nodes
+        // 1. Generate Brain Nodes (indexed by grid cell for O(1) neighbour lookup)
         const brainNodes = [];
-        for (let x = -width / 2; x <= width / 2; x += spacing) {
-            for (let y = -height / 2; y <= height / 2; y += spacing) {
+        const grid = new Map();
+        let ix = 0;
+        for (let x = -width / 2; x <= width / 2; x += spacing, ix++) {
+            let iy = 0;
+            for (let y = -height / 2; y <= height / 2; y += spacing, iy++) {
                 if (isBrain(x, y)) {
                     // Slight jitter for organic circuit look
-                    const jx = x + (Math.random() - 0.5) * spacing * 0.4;
-                    const jy = y + (Math.random() - 0.5) * spacing * 0.4;
-                    const node = { x: jx, y: jy, depth: Infinity, adj: [], id: nodes.length, isEdge: false };
+                    const jx = x + (rand() - 0.5) * spacing * 0.4;
+                    const jy = y + (rand() - 0.5) * spacing * 0.4;
+                    const node = { x: jx, y: jy, depth: Infinity, adj: [], id: nodes.length, isEdge: false, ix, iy };
                     nodes.push(node);
                     brainNodes.push(node);
+                    grid.set(ix * 4096 + iy, node);
                 }
             }
         }
@@ -1042,40 +1196,41 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let i = 0; i < numBounds; i++) {
             // Randomly place along left, right, top, bottom
             let bx, by;
-            if (Math.random() > 0.5) {
-                bx = Math.random() > 0.5 ? -width / 2 : width / 2;
-                by = (Math.random() - 0.5) * height;
+            if (rand() > 0.5) {
+                bx = rand() > 0.5 ? -width / 2 : width / 2;
+                by = (rand() - 0.5) * height;
             } else {
-                bx = (Math.random() - 0.5) * width;
-                by = Math.random() > 0.5 ? -height / 2 : height / 2;
+                bx = (rand() - 0.5) * width;
+                by = rand() > 0.5 ? -height / 2 : height / 2;
             }
             const node = { x: bx, y: by, depth: 0, adj: [], id: nodes.length, isEdge: true };
             nodes.push(node);
             boundaryNodes.push(node);
         }
 
-        // 3. Connect brain nodes to nearest neighbors
-        for (let i = 0; i < brainNodes.length; i++) {
-            for (let j = i + 1; j < brainNodes.length; j++) {
-                const n1 = brainNodes[i];
-                const n2 = brainNodes[j];
-                const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
-                if (dist < spacing * 1.6) { // allow horiz, vert, and diagonal
-                    n1.adj.push(n2);
-                    n2.adj.push(n1);
+        // 3. Connect brain nodes to nearest neighbours (only the 8 surrounding grid cells can be in range)
+        for (const n1 of brainNodes) {
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const n2 = grid.get((n1.ix + dx) * 4096 + (n1.iy + dy));
+                    if (!n2 || n2.id < n1.id) continue; // link each pair once
+                    if (Math.hypot(n1.x - n2.x, n1.y - n2.y) < maxLink) {
+                        n1.adj.push(n2);
+                        n2.adj.push(n1);
+                    }
                 }
             }
         }
 
         // 4. Connect Boundary nodes to outer brain nodes
         boundaryNodes.forEach(bNode => {
-            // Find closest brain node
             let closest = null;
             let minDist = Infinity;
-            brainNodes.forEach(brNode => {
+            for (const brNode of brainNodes) {
                 const d = Math.hypot(bNode.x - brNode.x, bNode.y - brNode.y);
                 if (d < minDist) { minDist = d; closest = brNode; }
-            });
+            }
             if (closest) {
                 bNode.adj.push(closest);
                 closest.adj.push(bNode);
@@ -1083,150 +1238,239 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // 5. BFS to assign depths
-        let queue = [...boundaryNodes];
-        while (queue.length > 0) {
-            const curr = queue.shift();
-            curr.adj.forEach(neighbor => {
+        const queue = [...boundaryNodes];
+        for (let head = 0; head < queue.length; head++) {
+            const curr = queue[head];
+            for (const neighbor of curr.adj) {
                 const dist = Math.hypot(curr.x - neighbor.x, curr.y - neighbor.y);
                 // Assign depth based on physical distance traveled
                 if (curr.depth + dist < neighbor.depth) {
                     neighbor.depth = curr.depth + dist;
                     queue.push(neighbor);
                 }
-            });
+            }
         }
 
-        maxDepth = Math.max(...nodes.filter(n => n.depth !== Infinity).map(n => n.depth));
+        let maxDepth = 0;
+        for (const n of nodes) {
+            if (n.depth !== Infinity && n.depth > maxDepth) maxDepth = n.depth;
+        }
+        if (maxDepth === 0) maxDepth = 1;
 
-        // 6. Create Edges array for drawing
+        // 6. Create Edges array for drawing (colour and timing precomputed once)
+        edges = [];
         const edgeSet = new Set();
         nodes.forEach(n1 => {
             n1.adj.forEach(n2 => {
-                const id1 = Math.min(n1.id, n2.id);
-                const id2 = Math.max(n1.id, n2.id);
-                const hash = `${id1}-${id2}`;
-                if (!edgeSet.has(hash) && n1.depth !== Infinity && n2.depth !== Infinity) {
-                    edgeSet.add(hash);
+                const key = Math.min(n1.id, n2.id) * 65536 + Math.max(n1.id, n2.id);
+                if (!edgeSet.has(key) && n1.depth !== Infinity && n2.depth !== Infinity) {
+                    edgeSet.add(key);
                     const startNode = n1.depth < n2.depth ? n1 : n2;
                     const endNode = n1.depth < n2.depth ? n2 : n1;
+                    const startNorm = startNode.depth / maxDepth;
+                    const endNorm = endNode.depth / maxDepth;
+
+                    // Colour gradient based on X position
+                    const mixRatio = (startNode.x + width / 4) / (width / 2);
+                    const clampMix = Math.max(0, Math.min(1, mixRatio));
+
                     edges.push({
-                        n1: startNode,
-                        n2: endNode,
-                        startNorm: startNode.depth / maxDepth,
-                        endNorm: endNode.depth / maxDepth
+                        x1: startNode.x, y1: startNode.y,
+                        x2: endNode.x, y2: endNode.y,
+                        startNorm,
+                        endNorm,
+                        span: Math.max(1e-6, endNorm - startNorm),
+                        boundary: startNode.isEdge || endNode.isEdge,
+                        bucket: Math.min(COLOR_BUCKETS - 1, Math.floor(clampMix * COLOR_BUCKETS))
                     });
                 }
             });
         });
+        edges.sort((a, b) => a.startNorm - b.startNorm);
+    }
+
+    // Cached section metrics: avoids a getBoundingClientRect() layout read every frame
+    let sectionTop = 0;
+    let sectionScrollable = 1;
+    function measureSection() {
+        sectionTop = docOffsetTop(section);
+        sectionScrollable = Math.max(1, section.offsetHeight - window.innerHeight);
     }
 
     function getScrollProgress() {
-        const rect = section.getBoundingClientRect();
-        const scrollTotal = rect.height - window.innerHeight;
-        let progress = -rect.top / scrollTotal;
+        const progress = (window.scrollY - sectionTop) / sectionScrollable;
         return Math.max(0, Math.min(1, progress));
     }
 
-    function interpolateColor(color1, color2, factor) {
-        const result = color1.slice();
-        for (let i = 0; i < 3; i++) {
-            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+    function strokeBatch(batch, bucket) {
+        if (!batch.length) return;
+        ctx.strokeStyle = bucketColors[bucket];
+        ctx.beginPath();
+        for (let k = 0; k < batch.length; k += 4) {
+            ctx.moveTo(batch[k], batch[k + 1]);
+            ctx.lineTo(batch[k + 2], batch[k + 3]);
         }
-        return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
+        ctx.stroke();
     }
 
     function draw(progress) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
-        ctx.save();
         ctx.translate(width / 2, height / 2); // Center origin
-
         ctx.lineCap = 'round';
 
-        // Colors
-        const cyan = [0, 255, 204];
-        const purple = [204, 0, 255];
+        // Edges are sorted by start time: binary-search how many have started
+        let lo = 0, hi = edges.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (edges[mid].startNorm <= progress) lo = mid + 1; else hi = mid;
+        }
 
-        edges.forEach(edge => {
-            if (progress < edge.startNorm) return; // Not reached yet
+        for (let b = 0; b < COLOR_BUCKETS; b++) {
+            lineBatches[b].length = 0;
+            nodeBatches[b].length = 0;
+            tipBatches[b].length = 0;
+        }
+        boundaryDraws.length = 0;
 
-            let edgeProg = (progress - edge.startNorm) / (edge.endNorm - edge.startNorm);
-            edgeProg = Math.max(0, Math.min(1, edgeProg));
+        for (let i = 0; i < lo; i++) {
+            const e = edges[i];
+            let p = (progress - e.startNorm) / e.span;
+            if (p > 1) p = 1;
+            const cx = e.x1 + (e.x2 - e.x1) * p;
+            const cy = e.y1 + (e.y2 - e.y1) * p;
 
-            // Fade out the incoming boundary strings right after they finish connecting to the brain
-            let alpha = 1;
-            if (edge.n1.isEdge || edge.n2.isEdge) {
-                if (progress > edge.endNorm) {
-                    // Fades from 1 to 0 over the next 15% of scroll
-                    alpha = 1 - ((progress - edge.endNorm) / 0.15);
-                    alpha = Math.max(0, alpha);
+            if (e.boundary) {
+                // Fade out the incoming boundary strings right after they finish connecting to the brain
+                let alpha = 1;
+                if (progress >= 1) {
+                    alpha = 0; // nothing left hanging once the brain is complete
+                } else if (progress > e.endNorm) {
+                    // Fades from 1 to 0 over the next 15% of scroll (or less, if the edge ends late)
+                    const fade = Math.min(0.15, 1 - e.endNorm);
+                    alpha = Math.max(0, 1 - ((progress - e.endNorm) / fade));
                 }
+                if (alpha > 0) boundaryDraws.push(e, p, alpha, cx, cy);
+                continue;
             }
-            if (alpha <= 0) return;
 
-            ctx.globalAlpha = alpha;
+            lineBatches[e.bucket].push(e.x1, e.y1, cx, cy);
+            if (p < 1) {
+                tipBatches[e.bucket].push(cx, cy);
+            } else {
+                nodeBatches[e.bucket].push(e.x2, e.y2);
+            }
+        }
 
-            const currX = edge.n1.x + (edge.n2.x - edge.n1.x) * edgeProg;
-            const currY = edge.n1.y + (edge.n2.y - edge.n1.y) * edgeProg;
+        // Pass 1: faint wide strokes = glow
+        ctx.lineWidth = 6;
+        ctx.globalAlpha = 0.2;
+        for (let b = 0; b < COLOR_BUCKETS; b++) strokeBatch(lineBatches[b], b);
+        for (let k = 0; k < boundaryDraws.length; k += 5) {
+            const e = boundaryDraws[k];
+            ctx.globalAlpha = 0.2 * boundaryDraws[k + 2];
+            strokeBatch([e.x1, e.y1, boundaryDraws[k + 3], boundaryDraws[k + 4]], e.bucket);
+        }
 
-            // Determine color based on X position for gradient
-            const mixRatio = (edge.n1.x + width / 4) / (width / 2);
-            const clampMix = Math.max(0, Math.min(1, mixRatio));
-            const strokeColor = interpolateColor(cyan, purple, clampMix);
+        // Pass 2: crisp core lines
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 1;
+        for (let b = 0; b < COLOR_BUCKETS; b++) strokeBatch(lineBatches[b], b);
+        for (let k = 0; k < boundaryDraws.length; k += 5) {
+            const e = boundaryDraws[k];
+            ctx.globalAlpha = boundaryDraws[k + 2];
+            strokeBatch([e.x1, e.y1, boundaryDraws[k + 3], boundaryDraws[k + 4]], e.bucket);
+        }
 
-            ctx.beginPath();
-            ctx.moveTo(edge.n1.x, edge.n1.y);
-            ctx.lineTo(currX, currY);
-
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = strokeColor;
-            ctx.stroke();
-
-            // Draw glowing node at the tip if it's currently drawing
-            if (edgeProg > 0 && edgeProg < 1) {
+        // End nodes (fully drawn edges) and glowing tips (edges still drawing)
+        ctx.globalAlpha = 1;
+        for (let b = 0; b < COLOR_BUCKETS; b++) {
+            const nodesB = nodeBatches[b];
+            if (nodesB.length) {
+                ctx.fillStyle = bucketColors[b];
                 ctx.beginPath();
-                ctx.arc(currX, currY, 2, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = strokeColor;
+                for (let k = 0; k < nodesB.length; k += 2) {
+                    ctx.moveTo(nodesB[k] + 1.5, nodesB[k + 1]);
+                    ctx.arc(nodesB[k], nodesB[k + 1], 1.5, 0, Math.PI * 2);
+                }
                 ctx.fill();
             }
-
-            // Draw end node if fully drawn (and not a boundary node)
-            if (edgeProg === 1 && !edge.n2.isEdge) {
+            const tipsB = tipBatches[b];
+            if (tipsB.length) {
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = bucketColors[b];
                 ctx.beginPath();
-                ctx.arc(edge.n2.x, edge.n2.y, 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = strokeColor;
-                ctx.shadowBlur = 5;
+                for (let k = 0; k < tipsB.length; k += 2) {
+                    ctx.moveTo(tipsB[k] + 5, tipsB[k + 1]);
+                    ctx.arc(tipsB[k], tipsB[k + 1], 5, 0, Math.PI * 2);
+                }
                 ctx.fill();
+                ctx.globalAlpha = 1;
             }
-        });
-
-        ctx.restore();
+        }
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        for (let b = 0; b < COLOR_BUCKETS; b++) {
+            const tipsB = tipBatches[b];
+            for (let k = 0; k < tipsB.length; k += 2) {
+                ctx.moveTo(tipsB[k] + 2, tipsB[k + 1]);
+                ctx.arc(tipsB[k], tipsB[k + 1], 2, 0, Math.PI * 2);
+            }
+        }
+        for (let k = 0; k < boundaryDraws.length; k += 5) {
+            const p = boundaryDraws[k + 1];
+            if (p > 0 && p < 1) {
+                ctx.moveTo(boundaryDraws[k + 3] + 2, boundaryDraws[k + 4]);
+                ctx.arc(boundaryDraws[k + 3], boundaryDraws[k + 4], 2, 0, Math.PI * 2);
+            }
+        }
+        ctx.fill();
     }
 
     let lastProgress = -1;
-    let isDrawing = false;
 
-    window.addEventListener('resize', resize);
-    window.addEventListener('scroll', () => {
-        if (!isDrawing) {
-            requestAnimationFrame(() => {
-                const progress = getScrollProgress();
-                // Performance Optimization: Only draw if progress changed AND we are actively inside or just leaving the section boundaries
-                if (progress !== lastProgress && (progress > 0 || lastProgress > 0) && (progress < 1 || lastProgress < 1)) {
-                    draw(progress);
-                    lastProgress = progress;
-                }
-                isDrawing = false;
-            });
-            isDrawing = true;
+    // (Re)build the canvas and circuit for the current viewport
+    let builtWidth = 0, builtHeight = 0;
+    function rebuild() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        builtWidth = width;
+        builtHeight = height;
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        generateCircuit();
+        measureSection();
+        lastProgress = getScrollProgress();
+        draw(lastProgress);
+    }
+
+    // Debounced, and ignores small height-only changes (mobile address bar showing/hiding while scrolling)
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (window.innerWidth !== builtWidth || Math.abs(window.innerHeight - builtHeight) > 150) {
+                rebuild();
+            }
+        }, 150);
+    });
+
+    onLayoutChange(measureSection);
+
+    onScroll(() => {
+        const progress = getScrollProgress();
+        // Only draw if progress changed AND we are inside (or just leaving) the section
+        if (progress !== lastProgress && (progress > 0 || lastProgress > 0) && (progress < 1 || lastProgress < 1)) {
+            draw(progress);
+            lastProgress = progress;
         }
     });
 
     // Init
-    resize();
+    rebuild();
 });
 
 // ==========================================

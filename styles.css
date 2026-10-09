@@ -5,7 +5,9 @@
     --text-secondary: #8a8f98;
     --accent-primary: #00ffcc;
     --accent-secondary: #b026ff;
-    --glass-bg: rgba(10, 10, 15, 0.4);
+    --glass-bg: rgba(10, 10, 15, 0.72);
+    --glass-bg-hover: rgba(20, 20, 28, 0.85);
+    --glass-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.5);
     --glass-border: rgba(255, 255, 255, 0.08);
     
     --font-heading: 'Space Grotesk', sans-serif;
@@ -20,7 +22,9 @@
     --text-secondary: #4a4a68;
     --accent-primary: #008f73;
     --accent-secondary: #741bcf;
-    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-bg: rgba(255, 255, 255, 0.88);
+    --glass-bg-hover: rgba(255, 255, 255, 0.97);
+    --glass-shadow-hover: 0 10px 30px rgba(26, 26, 46, 0.15);
     --glass-border: rgba(0, 0, 0, 0.1);
 }
 
@@ -31,7 +35,8 @@
 }
 
 html {
-    scroll-behavior: smooth;
+    /* Lenis handles smooth scrolling; native smooth-scroll fights it */
+    scroll-behavior: auto;
 }
 
 body {
@@ -56,14 +61,35 @@ body {
     border-radius: 50%;
     z-index: 10000;
     pointer-events: none;
-    mix-blend-mode: difference;
-    transition: width 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), 
-                height 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    will-change: transform;
+    transition: width 0.3s cubic-bezier(0.165, 0.84, 0.44, 1),
+                height 0.3s cubic-bezier(0.165, 0.84, 0.44, 1),
+                background-color 0.3s ease;
+}
+
+:root.light-theme .cursor-dot {
+    background-color: #1a1a2e;
 }
 
 .cursor-dot.cursor-morph {
     width: 60px;
     height: 60px;
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+:root.light-theme .cursor-dot.cursor-morph {
+    background-color: rgba(26, 26, 46, 0.15);
+}
+
+@media (hover: none), (pointer: coarse) {
+    .cursor-dot,
+    .cursor-outline {
+        display: none;
+    }
+
+    body {
+        cursor: auto;
+    }
 }
 
 .cursor-outline {
@@ -77,6 +103,7 @@ body {
     border-radius: 50%;
     z-index: 9999;
     pointer-events: none;
+    will-change: transform;
     transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s, opacity 0.3s;
 }
 
@@ -110,7 +137,7 @@ body {
     pointer-events: none;
     mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
     -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-    animation: pan-grid 20s linear infinite;
+    /* Static: animating background-position forced a repaint every frame */
 }
 
 :root.light-theme .bg-grid {
@@ -119,18 +146,14 @@ body {
         linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
 }
 
-@keyframes pan-grid {
-    0% { background-position: 0 0; }
-    100% { background-position: 50px 50px; }
-}
-
-/* Background Blobs */
+/* Background Blobs (soft radial gradients; no blur filter, which is very costly) */
 .blob {
     position: fixed;
     border-radius: 50%;
-    filter: blur(120px);
     z-index: -1;
     opacity: 0.4;
+    pointer-events: none;
+    will-change: transform;
     animation: float 20s infinite ease-in-out;
 }
 
@@ -492,20 +515,24 @@ section {
 }
 
 /* --- Shared Components --- */
+/* No backdrop-filter here: blurring 20+ cards over animated backgrounds every
+   scroll frame was the main cause of scroll lag. Opaque-ish background instead. */
 .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 2rem;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                opacity 0.8s cubic-bezier(0.5, 0, 0, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
 }
 
 .glass-card:hover {
     /* transform removed for 3D tilt JS compatibility */
-    background: rgba(20, 20, 25, 0.6);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 255, 204, 0.1) inset;
+    background: var(--glass-bg-hover);
+    box-shadow: var(--glass-shadow-hover), 0 0 15px rgba(0, 255, 204, 0.1) inset;
     border-color: rgba(0, 255, 204, 0.3);
 }
 
@@ -1579,6 +1606,17 @@ body.loading {
 .experience-wrapper {
     height: 300vh; /* 3 screens of scrolling */
     position: relative;
+    /* The generic `section` rule (flex, centered, 100px padding) pushed the sticky stage
+       ~900px down the section, so the track was already scrolling sideways (and the first
+       "Machine Learning Engineer" card sliding off-screen) before the stage pinned.
+       Plain block layout makes it pin at the very start. */
+    display: block;
+    padding: 0;
+    min-height: 0;
+    /* Full-bleed: the track/progress bar are sized in vw, but <main> is only 1200px wide
+       and was clipping the first and last cards. */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
 }
 
 .experience-sticky {
@@ -1623,7 +1661,7 @@ body.loading {
     margin-top: 20px;
     font-family: var(--font-mono);
     font-size: 0.9rem;
-    color: var(--accent-secondary);
+    color: var(--accent-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1635,6 +1673,42 @@ body.loading {
 .role-card:hover .card-hint {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* No hover on touch screens: always show the hint */
+@media (hover: none) {
+    .card-hint {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Keep the absolutely-positioned title clear of the first (ML Engineer) card
+   on short or narrow viewports */
+@media (max-height: 800px) {
+    .experience-sticky {
+        padding-top: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .experience-sticky {
+        padding-top: 140px;
+    }
+
+    #roles .section-title {
+        font-size: 1.8rem;
+        top: 100px !important; /* beats the inline top on the heading */
+    }
+
+    .exp-card {
+        min-width: min(500px, 85vw);
+        padding: 28px;
+    }
+
+    .exp-card h3 {
+        font-size: 1.6rem;
+    }
 }
 
 /* Horizontal Progress Bar */
@@ -1651,21 +1725,28 @@ body.loading {
 
 .roles-progress-bar {
     height: 100%;
-    width: 0%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
     background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     border-radius: 4px;
     box-shadow: 0 0 10px var(--accent-primary);
 }
 
 /* 5. Split-Text Animation */
-.split-text span {
+.split-text .split-word {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.split-text .split-char {
     display: inline-block;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-.split-text.in-view span {
+.split-text.in-view .split-char {
     opacity: 1;
     transform: translateY(0);
 }
@@ -1872,7 +1953,16 @@ body.poison-mode .glass-card, body.poison-mode .navbar, body.poison-mode .glass-
     stroke-width: 4;
     stroke-linecap: square;
     stroke-linejoin: miter;
-    filter: drop-shadow(0 0 8px var(--accent-primary));
+}
+
+/* Cheap glow: a wider, faint copy of the path instead of a drop-shadow filter */
+#circuit-glow {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 12;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    opacity: 0.25;
 }
 
 /* 3. Parallax Footer Curtain Reveal */
@@ -1951,14 +2041,21 @@ body.poison-mode .glass-card, body.poison-mode .navbar, body.poison-mode .glass-
 
 /* 2. 3D Tilt Cards */
 .tilt-card {
-    transform-style: preserve-3d;
-    transform: perspective(1000px);
-    transition: transform 0.1s; /* smooth tracking */
+    /* Keep the fade-in (opacity) and theme transitions; only transform is fast for tracking */
+    transition: transform 0.1s, /* smooth tracking */
+                opacity 0.8s cubic-bezier(0.5, 0, 0, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
     /* position removed to prevent overriding position: sticky on project cards */
 }
 
 .tilt-card.leave {
-    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); /* bounce back */
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), /* bounce back */
+                opacity 0.8s cubic-bezier(0.5, 0, 0, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
 }
 
 .tilt-glare {
@@ -2091,7 +2188,13 @@ body.poison-mode .glass-card, body.poison-mode .navbar, body.poison-mode .glass-
 /* 3. Neural Core Brain Section */
 .neural-core-section {
     position: relative;
-    width: 100%;
+    /* Full-bleed and block layout (see .experience-wrapper) so the sticky canvas pins at
+       the section start and the scroll-scrubbed animation lines up with it */
+    display: block;
+    padding: 0;
+    min-height: 0;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
     height: 300vh; /* Massive scroll area */
     background: transparent;
     z-index: 10;

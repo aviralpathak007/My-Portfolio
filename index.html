@@ -12,7 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script>
         // Check for saved theme preference to prevent FOUC
         const savedTheme = localStorage.getItem('portfolio-theme');
@@ -95,7 +95,6 @@
 
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
 
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="audio-toggle magnetic theme-btn" aria-label="Toggle Theme"
@@ -108,6 +107,8 @@
     </nav>
     <!-- SCROLL-DRIVEN CIRCUIT SVG -->
     <svg id="scroll-circuit" viewBox="0 0 100 2000" preserveAspectRatio="none">
+        <path id="circuit-glow"
+            d="M 20 0 L 20 200 L 50 250 L 50 600 L 20 650 L 20 1200 L 80 1300 L 80 1700 L 20 1800 L 20 2000" />
         <path id="circuit-path"
             d="M 20 0 L 20 200 L 50 250 L 50 600 L 20 650 L 20 1200 L 80 1300 L 80 1700 L 20 1800 L 20 2000" />
     </svg>
@@ -118,7 +119,7 @@
             <div class="hero-left">
                 <div class="hero-image-wrapper glass-card">
                     <!-- The user will save their photo as assets/profile-pic.jpeg -->
-                    <img src="assets/profile-pic.jpeg" alt="Aviral Pathak" class="hero-image"
+                    <img src="assets/profile-pic.jpeg" alt="Aviral Pathak" class="hero-image" decoding="async"
                         onerror="this.src='assets/avatar.png'">
                 </div>
             </div>
@@ -224,7 +225,7 @@
         <section id="roles" class="experience-wrapper">
             <div class="experience-sticky">
                 <h2 class="section-title split-text"
-                    style="position: absolute; top: 40px; left: 10%; text-transform: uppercase;">Roles I Am
+                    style="position: absolute; top: 120px; left: 10%; right: 10%; margin: 0; text-align: left; text-transform: uppercase; z-index: 2;">Roles I Am
                     <span class="highlight">Comfortable With</span>
                 </h2>
                 <div class="experience-track">
@@ -402,7 +403,7 @@
             <div class="projects-stack">
                 <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
                     data-title="EpiAlert" data-subtitle="Disease Outbreak Prediction System"
-                    data-image="./assets/epialert.png"
+                    data-image="./assets/epialert.jpg"
                     data-desc="EpiAlert is an innovative platform designed as India's first disease outbreak prediction system. By integrating heterogeneous data sources, it detects rising outbreak risks earlier than traditional surveillance methods, enabling a proactive public health response. Additionally, this intelligent system significantly transforms traditional tracking to provide incredible predictive capabilities. To drive engagement and streamline vital data collection, the project features the EpiAlert Health Heroes interface, a gamified dashboard built specifically for surveying and filling forms. Ultimately, EpiAlert leverages advanced modeling to safeguard communities and effectively revolutionize modern healthcare monitoring with unparalleled technical precision, strategic foresight, and immense potential for future public safety.">
                     <div class="project-header">
                         <i data-lucide="activity"></i>
@@ -428,7 +429,7 @@
                 </div>
                 <div class="glass-card project-card sticky-project role-card" style="cursor: pointer;"
                     data-title="Smart Attend" data-subtitle="Automated Attendance System for Rural Schools"
-                    data-image="./assets/smartattend.png"
+                    data-image="./assets/smartattend.jpg"
                     data-techstack="Tech Stack: Python, OpenCV, IoT (RFID), SQLite. Additional details about the architecture, challenges solved, and specific implementations will be added here soon."
                     data-desc="Smart Attend is an innovative, automated attendance system specifically built for rural schools to modernize daily classroom administration. Its uniqueness stems from offering a low-cost entry point while remaining highly flexible and scalable. Operating as a versatile dual-mode system, it seamlessly utilizes both advanced facial recognition and efficient QR or RFID tag scanning. Recognizing the need for accessibility, the platform features a clean, icon-based, multilingual user interface. This simple UI ensures ultimate ease of use for teachers and students with minimal tech experience, overcoming traditional barriers to effectively streamline daily educational operations everywhere and empowering rural learning communities immensely today.">
                     <div class="project-header">
@@ -526,7 +527,7 @@
         <div class="role-modal-content glass-card" data-lenis-prevent>
             <button id="close-role-modal" class="close-btn magnetic"><i data-lucide="x"></i></button>
             <div class="role-modal-image">
-                <img id="role-modal-img" src="" alt="Role Image">
+                <img id="role-modal-img" src="" alt="Role Image" decoding="async">
             </div>
             <div class="role-modal-body">
                 <h2 id="role-modal-title"></h2>
@@ -542,9 +543,9 @@
     </div>
 
     <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
 
-    <script src="script.js"></script>
+    <script defer src="script.js"></script>
 </body>
 
 </html>
