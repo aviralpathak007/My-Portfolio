@@ -763,46 +763,52 @@ if (terminalSandbox && terminalBody && skillsData) {
 // ==========================================
 
 // 1 & 2. Preloader & AudioContext
+// The preloader continues on its own after PRELOADER_MS (no click needed). Sound is OFF by
+// default; the AudioContext is only created when the visitor turns sound on with the toggle.
+const PRELOADER_MS = 2500;
 const preloader = document.getElementById('preloader');
 const bootText = document.getElementById('boot-text');
-const enterBtn = document.getElementById('enter-btn');
 const progressBar = document.getElementById('progress-bar');
 const loaderText = document.getElementById('loader-text');
+const soundHint = document.getElementById('sound-hint');
+const audioToggleBtn = document.getElementById('audio-toggle');
 
 let audioCtx;
 window.isAudioEnabled = false; // globally accessible
 
-// Initialize Preloader Sequence
+// "Turn on sound" nudge: an arrow + label pointing at the sound button
+let soundHintTimer = null;
+function showSoundHint() {
+    if (!soundHint || window.isAudioEnabled) return;
+    soundHint.classList.add('show');
+    if (audioToggleBtn) audioToggleBtn.classList.add('attention');
+    soundHintTimer = setTimeout(hideSoundHint, 10000);
+}
+function hideSoundHint() {
+    clearTimeout(soundHintTimer);
+    if (soundHint) soundHint.classList.remove('show');
+    if (audioToggleBtn) audioToggleBtn.classList.remove('attention');
+}
+
+function enterSite() {
+    if (!preloader || preloader.dataset.done) return;
+    preloader.dataset.done = '1';
+    preloader.classList.add('hidden'); // fades out via CSS
+    setTimeout(() => {
+        preloader.style.display = 'none';
+        document.body.classList.remove('loading');
+        if (typeof initObserver === 'function') initObserver(); // Start fade animations
+        setTimeout(showSoundHint, 700);
+    }, 600);
+}
+
+// Initialize Preloader Sequence: loading bar, then boot text, then straight into the site
 setTimeout(() => {
     if (progressBar) progressBar.style.display = 'none';
     if (loaderText) loaderText.style.display = 'none';
     if (bootText) bootText.style.display = 'block';
-
-    setTimeout(() => {
-        if (enterBtn) enterBtn.style.display = 'block';
-    }, 500);
-}, 1000);
-
-if (enterBtn) {
-    enterBtn.addEventListener('click', () => {
-        // Initialize Audio Context on user gesture
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        window.isAudioEnabled = true;
-        document.getElementById('sound-icon-on').style.display = 'block';
-        document.getElementById('sound-icon-off').style.display = 'none';
-
-        playThock(); // Feedback sound
-
-        // Hide preloader
-        preloader.style.opacity = '0';
-        preloader.style.transition = 'opacity 0.5s ease';
-        setTimeout(() => {
-            preloader.style.display = 'none';
-            document.body.classList.remove('loading');
-            if (typeof initObserver === 'function') initObserver(); // Start fade animations
-        }, 500);
-    });
-}
+}, 1500);
+setTimeout(enterSite, PRELOADER_MS);
 
 // Audio Synthesizer Functions
 function playSound(type, frequency, duration, vol, pitchSweep = false) {
@@ -831,15 +837,17 @@ window.playTick = function () { playSound('square', 1000, 0.03, 0.05, false); }
 function playClick() { playSound('sine', 800, 0.05, 0.2, true); }
 
 // Audio Toggle Button
-const audioToggle = document.getElementById('audio-toggle');
-if (audioToggle) {
-    audioToggle.addEventListener('click', () => {
+if (audioToggleBtn) {
+    audioToggleBtn.addEventListener('click', () => {
+        hideSoundHint();
         window.isAudioEnabled = !window.isAudioEnabled;
-        if (window.isAudioEnabled && !audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (window.isAudioEnabled) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
         document.getElementById('sound-icon-on').style.display = window.isAudioEnabled ? 'block' : 'none';
         document.getElementById('sound-icon-off').style.display = window.isAudioEnabled ? 'none' : 'block';
+        if (window.isAudioEnabled) playThock(); // confirmation blip
     });
 }
 
