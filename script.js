@@ -1583,3 +1583,251 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
+// ==========================================
+// LIVE GITHUB ACTIVITY STRIP
+// Contribution graph (jogruber.de public mirror of the profile calendar; GitHub's own API
+// needs a token for it) + recent commits (GitHub search API, no token needed). Results are
+// cached in localStorage so a visitor doesn't burn GitHub's anonymous rate limit.
+// ==========================================
+(function initGithubStrip() {
+    const section = document.getElementById('github');
+    if (!section) return;
+
+    const USER = section.dataset.githubUser;
+    const CACHE_TTL = 30 * 60 * 1000;
+    const GRAPH_URL = `https://github-contributions-api.jogruber.de/v4/${USER}?y=last`;
+    const COMMITS_URL = `https://api.github.com/search/commits?q=author:${USER}&sort=author-date&order=desc&per_page=5`;
+
+    const elGraph = document.getElementById('gh-graph');
+    const elMonths = document.getElementById('gh-months');
+    const elScroll = document.getElementById('gh-graph-scroll');
+    const elStats = document.getElementById('gh-stats');
+    const elCommits = document.getElementById('gh-commits');
+    const elStatus = document.getElementById('gh-status');
+    const elTip = document.getElementById('gh-tip');
+    // position: fixed breaks inside the transformed (.fade-in) section, so mount the tooltip on <body>
+    document.body.appendChild(elTip);
+
+    // --- tiny cache helpers (storage can throw in private mode) ---
+    function readCache(key) {
+        try {
+            const raw = JSON.parse(localStorage.getItem(key));
+            return raw && raw.t ? raw : null;
+        } catch (e) { return null; }
+    }
+    function writeCache(key, data) {
+        try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), data })); } catch (e) { /* ignore */ }
+    }
+    async function cachedFetch(key, url, parse) {
+        const cached = readCache(key);
+        if (cached && Date.now() - cached.t < CACHE_TTL) return cached.data;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = parse(await res.json());
+            writeCache(key, data);
+            return data;
+        } catch (err) {
+            if (cached) return cached.data; // stale beats nothing
+            throw err;
+        }
+    }
+
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parseDay = (iso) => new Date(`${iso}T00:00:00Z`);
+    const fmtDay = (iso) => parseDay(iso).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC'
+    });
+
+    // --- contribution graph ---
+    function renderGraph(days) {
+        elGraph.classList.remove('gh-loading');
+        elGraph.textContent = '';
+        elMonths.textContent = '';
+        if (!days.length) return;
+
+        // Rows are Sun..Sat, so pad the first column with empty cells up to the first weekday
+        const pad = parseDay(days[0].date).getUTCDay();
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < pad; i++) {
+            const empty = document.createElement('span');
+            empty.className = 'gh-cell gh-empty';
+            frag.appendChild(empty);
+        }
+        days.forEach(d => {
+            const cell = document.createElement('span');
+            cell.className = 'gh-cell';
+            cell.dataset.level = d.level;
+            cell.dataset.date = d.date;
+            cell.dataset.count = d.count;
+            frag.appendChild(cell);
+        });
+        elGraph.appendChild(frag);
+
+        // Month labels above the first column of each new month
+        const colW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gh-cell')) +
+            parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gh-gap'));
+        const cols = Math.ceil((pad + days.length) / 7);
+        elMonths.style.width = `${cols * colW}px`;
+        let lastMonth = -1, lastCol = -10;
+        for (let c = 0; c < cols; c++) {
+            const dayIndex = Math.max(0, c * 7 - pad);
+            const month = parseDay(days[dayIndex].date).getUTCMonth();
+            if (month !== lastMonth && c - lastCol >= 3) {
+                const label = document.createElement('span');
+                label.textContent = MONTHS[month];
+                label.style.left = `${c * colW}px`;
+                elMonths.appendChild(label);
+                lastCol = c;
+            }
+            lastMonth = month;
+        }
+
+        elGraph.setAttribute('aria-label',
+            `GitHub contribution graph, ${days.reduce((n, d) => n + d.count, 0)} contributions in the last year`);
+        elScroll.scrollLeft = elScroll.scrollWidth; // most recent weeks are on the right
+    }
+
+    function renderStats(days) {
+        const total = days.reduce((n, d) => n + d.count, 0);
+
+        // Longest streak, and current streak (counted back from today; an empty "today" doesn't break it)
+        let longest = 0, run = 0;
+        days.forEach(d => { run = d.count > 0 ? run + 1 : 0; longest = Math.max(longest, run); });
+        let current = 0, i = days.length - 1;
+        if (i >= 0 && days[i].count === 0) i--;
+        for (; i >= 0 && days[i].count > 0; i--) current++;
+
+        elStats.textContent = '';
+        [[total, 'contributions this year'], [current, 'day streak'], [longest, 'longest streak']].forEach(([n, label]) => {
+            const item = document.createElement('span');
+            const strong = document.createElement('strong');
+            strong.textContent = n;
+            item.append(strong, ` ${label}`);
+            elStats.appendChild(item);
+        });
+    }
+
+    // --- recent commits ---
+    const rtf = typeof Intl !== 'undefined' && Intl.RelativeTimeFormat ? new Intl.RelativeTimeFormat('en', { numeric: 'auto' }) : null;
+    function timeAgo(iso) {
+        const secs = (new Date(iso).getTime() - Date.now()) / 1000;
+        const steps = [['year', 31536000], ['month', 2592000], ['day', 86400], ['hour', 3600], ['minute', 60]];
+        for (const [unit, size] of steps) {
+            if (Math.abs(secs) >= size) return rtf ? rtf.format(Math.round(secs / size), unit) : `${Math.round(-secs / size)} ${unit}s ago`;
+        }
+        return 'just now';
+    }
+
+    function renderCommits(commits) {
+        elCommits.textContent = '';
+        commits.forEach(c => {
+            const li = document.createElement('li');
+            li.className = 'gh-commit';
+
+            const dot = document.createElement('span');
+            dot.className = 'gh-commit-dot';
+
+            const main = document.createElement('div');
+            main.className = 'gh-commit-main';
+
+            const msg = document.createElement('a');
+            msg.className = 'gh-commit-msg';
+            msg.href = c.url;
+            msg.target = '_blank';
+            msg.rel = 'noopener';
+            msg.textContent = c.message;
+            msg.title = c.message;
+
+            const meta = document.createElement('span');
+            meta.className = 'gh-commit-meta';
+            const repo = document.createElement('a');
+            repo.href = c.repoUrl;
+            repo.target = '_blank';
+            repo.rel = 'noopener';
+            repo.textContent = c.repo.split('/').pop();
+            repo.title = c.repo;
+            const sha = document.createElement('a');
+            sha.href = c.url;
+            sha.target = '_blank';
+            sha.rel = 'noopener';
+            sha.textContent = c.sha.slice(0, 7);
+            const time = document.createElement('time');
+            time.dateTime = c.date;
+            time.textContent = timeAgo(c.date);
+            time.title = new Date(c.date).toLocaleString();
+            meta.append(repo, ' · ', sha, ' · ', time);
+
+            main.append(msg, meta);
+            li.append(dot, main);
+            elCommits.appendChild(li);
+        });
+    }
+
+    // --- tooltip on the graph (hover on desktop, tap on touch) ---
+    function showTip(e) {
+        const cell = e.target.closest('.gh-cell[data-date]');
+        if (!cell) { elTip.classList.remove('show'); return; }
+        const n = Number(cell.dataset.count);
+        elTip.textContent = `${n === 0 ? 'No' : n} contribution${n === 1 ? '' : 's'} on ${fmtDay(cell.dataset.date)}`;
+        const r = cell.getBoundingClientRect();
+        elTip.style.left = `${Math.min(window.innerWidth - 16, Math.max(16, r.left + r.width / 2))}px`;
+        elTip.style.top = `${r.top - 38}px`;
+        elTip.style.transform = 'translateX(-50%)';
+        elTip.classList.add('show');
+    }
+    elGraph.addEventListener('mouseover', showTip);
+    elGraph.addEventListener('click', showTip);
+    elGraph.addEventListener('mouseleave', () => elTip.classList.remove('show'));
+    elScroll.addEventListener('scroll', () => elTip.classList.remove('show'), { passive: true });
+
+    // --- load (lazily, shortly before the section scrolls into view) ---
+    let started = false;
+    async function load() {
+        if (started) return;
+        started = true;
+        elGraph.classList.add('gh-loading');
+
+        const [graph, commits] = await Promise.allSettled([
+            cachedFetch('gh-graph-v1', GRAPH_URL, json => json.contributions.map(d => ({ date: d.date, count: d.count, level: d.level }))),
+            cachedFetch('gh-commits-v1', COMMITS_URL, json => json.items.map(i => ({
+                message: i.commit.message.split('\n')[0],
+                date: i.commit.author.date,
+                sha: i.sha,
+                url: i.html_url,
+                repo: i.repository.full_name,
+                repoUrl: i.repository.html_url
+            })))
+        ]);
+
+        const problems = [];
+        if (graph.status === 'fulfilled') {
+            renderGraph(graph.value);
+            renderStats(graph.value);
+        } else {
+            elGraph.classList.remove('gh-loading');
+            problems.push('the contribution graph');
+        }
+        if (commits.status === 'fulfilled' && commits.value.length) {
+            renderCommits(commits.value);
+        } else if (commits.status === 'rejected') {
+            problems.push('recent commits');
+        }
+        elStatus.textContent = problems.length
+            ? `Couldn't load ${problems.join(' and ')} right now. Try the GitHub profile link below.`
+            : '';
+    }
+
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            if (entries.some(e => e.isIntersecting)) {
+                io.disconnect();
+                load();
+            }
+        }, { rootMargin: '600px 0px' });
+        io.observe(section);
+    } else {
+        load();
+    }
+})();
