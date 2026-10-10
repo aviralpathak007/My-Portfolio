@@ -1831,3 +1831,36 @@ document.addEventListener('DOMContentLoaded', () => {
         load();
     }
 })();
+
+// ==========================================
+// "AVAILABLE FOR NEW OPPORTUNITIES" POPOVER
+// ==========================================
+(function initOpenPopover() {
+    const badge = document.getElementById('open-badge');
+    const pop = document.getElementById('open-popover');
+    if (!badge || !pop) return;
+
+    function setOpen(open) {
+        pop.classList.toggle('open', open);
+        badge.setAttribute('aria-expanded', String(open));
+    }
+
+    badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(!pop.classList.contains('open'));
+    });
+
+    // Close on outside click, Escape, or after using the link inside
+    document.addEventListener('click', (e) => {
+        if (pop.classList.contains('open') && !pop.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && pop.classList.contains('open')) {
+            setOpen(false);
+            badge.focus();
+        }
+    });
+    pop.addEventListener('click', (e) => {
+        if (e.target.closest('a')) setOpen(false);
+    });
+})();

@@ -133,9 +133,22 @@
             </div>
 
             <div class="hero-right">
-                <a href="#contact" class="hero-badge">
-                    <span class="dot"></span> Available for new opportunities
-                </a>
+                <div class="hero-badge-wrap">
+                    <button type="button" class="hero-badge" id="open-badge" aria-expanded="false"
+                        aria-controls="open-popover">
+                        <span class="dot"></span> Available for new opportunities
+                    </button>
+                    <div class="open-popover" id="open-popover" role="region" aria-label="Open to opportunities">
+                        <p class="open-popover-title">Open to work &#128640;</p>
+                        <ul class="open-popover-chips">
+                            <li>&#127891; Internships</li>
+                            <li>&#129504; AI / ML / DS roles</li>
+                            <li>&#128241; App Development</li>
+                        </ul>
+                        <a href="#contact" class="open-popover-cta" id="open-popover-cta">Let&rsquo;s talk <span
+                                aria-hidden="true">&rarr;</span></a>
+                    </div>
+                </div>
 
                 <h1 class="hero-huge-title">
                     <span class="greeting-script">Hey, there</span><br>

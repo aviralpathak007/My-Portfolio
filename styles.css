@@ -370,6 +370,11 @@ section {
     align-items: flex-start;
 }
 
+.hero-badge-wrap {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
 .hero-badge {
     display: inline-flex;
     align-items: center;
@@ -380,11 +385,109 @@ section {
     border-radius: 30px;
     font-size: 0.85rem;
     font-family: var(--font-mono);
-    margin-bottom: 2rem;
     text-decoration: none;
     color: var(--text-primary);
     transition: all 0.3s ease;
     cursor: pointer;
+}
+
+.hero-badge[aria-expanded="true"] {
+    border-color: rgba(255, 107, 0, 0.6);
+    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.15);
+}
+
+/* Small popover opened by the badge */
+.open-popover {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    z-index: 50;
+    width: min(330px, calc(100vw - 40px));
+    padding: 1.1rem 1.25rem 1.2rem;
+    border-radius: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 107, 0, 0.45);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(255, 107, 0, 0.12);
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.97);
+    transform-origin: 24px 0;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+}
+
+/* little caret pointing up at the badge */
+.open-popover::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    background: var(--bg-secondary);
+    border-top: 1px solid rgba(255, 107, 0, 0.45);
+    border-left: 1px solid rgba(255, 107, 0, 0.45);
+    transform: rotate(45deg);
+}
+
+.open-popover.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.open-popover-title {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.open-popover-chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.open-popover-chips li {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent-primary);
+    background: rgba(0, 255, 204, 0.07);
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    border-radius: 999px;
+    padding: 4px 11px;
+}
+
+.open-popover-cta {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ff6b00;
+    text-decoration: none;
+}
+
+.open-popover-cta span {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.open-popover-cta:hover {
+    text-decoration: underline;
+}
+
+.open-popover-cta:hover span {
+    transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .open-popover {
+        transition: opacity 0.15s ease, visibility 0.15s;
+        transform: none;
+    }
 }
 
 .hero-badge:hover {
